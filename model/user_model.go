@@ -2,11 +2,10 @@ package model
 
 import "time"
 
-type DailyExpenditure struct {
+type User struct {
 	ID        string    `json:"id"`
-	User_ID  string    `json:"user_id"`
-	Amount  float64    `json:"amount"`
-	description  string    `json:"user_id"`
+	Username  string    `json:"username"`
+	Password  string    `json:"password"`
 	IsActive  bool      `json:"is_active"`
 	Role      string    `json:"role"`
 	CreatedAt time.Time `json:"created_at"`
