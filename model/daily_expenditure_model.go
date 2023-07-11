@@ -4,8 +4,8 @@ import "time"
 
 type DailyExpenditure struct {
 	ID          string    `json:"id"`
-	User_ID     string    `json:"user_id"`
-	Amount      float64   `json:"amount"`
+	UserID      string    `json:"user_id"`
+	Amount      float64   `json:"amount" binding:"required"`
 	Description string    `json:"description"`
 	IsActive    bool      `json:"is_active"`
 	Role        string    `json:"role"`

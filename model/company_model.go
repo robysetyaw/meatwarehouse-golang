@@ -4,7 +4,7 @@ import "time"
 
 type Company struct {
 	ID          string    `json:"id"`
-	Name        string    `json:"name"`
+	Name        string    `json:"name" binding:"required"`
 	Address     string    `json:"address"`
 	Email       string    `json:"email"`
 	PhoneNumber string    `json:"phone_number"`
