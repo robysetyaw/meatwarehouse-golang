@@ -56,8 +56,14 @@ func (uc *userUseCase) CreateUser(user *model.User) error {
 func (uc *userUseCase) UpdateUser(user *model.User) error {
 	// Implement any business logic or validation before updating the user
 	// You can also perform data manipulation or enrichment if needed
-
-	err := uc.userRepository.UpdateUser(user)
+	existingUser, err := uc.userRepository.GetByUsername(user.Username)
+	if err != nil {
+		return fmt.Errorf("failed to check username existence: %v", err)
+	}
+	if existingUser != nil {
+		return fmt.Errorf("username already exists")
+	}
+	err = uc.userRepository.UpdateUser(user)
 	if err != nil {
 		// Handle any repository errors or perform error logging
 		return err
@@ -102,10 +108,16 @@ func (uc *userUseCase) GetAllUsers() ([]*model.User, error) {
 	return users, nil
 }
 
-func (uc *userUseCase) DeleteUser(id string) error {
+func (uc *userUseCase) DeleteUser(user string) error {
 	// Implement any business logic or validation before deleting the user
-
-	err := uc.userRepository.DeleteUser(id)
+	existingUser, err := uc.userRepository.GetByUsername(user)
+	if err != nil {
+		return fmt.Errorf("failed to check username existence: %v", err)
+	}
+	if existingUser != nil {
+		return fmt.Errorf("username already exists")
+	}
+	err = uc.userRepository.DeleteUser(user)
 	if err != nil {
 		// Handle any repository errors or perform error logging
 		return err
