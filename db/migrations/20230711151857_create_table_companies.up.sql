@@ -1,6 +1,6 @@
 CREATE TABLE companies (
     id VARCHAR PRIMARY KEY,
-    name VARCHAR,
+    company_name VARCHAR,
     address VARCHAR,
     email VARCHAR,
     phone_number VARCHAR,

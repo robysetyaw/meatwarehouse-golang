@@ -1,6 +1,6 @@
 CREATE TABLE daily_expenditures (
     id VARCHAR PRIMARY KEY,
-    user_id VARCHAT,
+    user_id VARCHAR,
     amount NUMERIC,
     description VARCHAR,
     created_at TIMESTAMP,
