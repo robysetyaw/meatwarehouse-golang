@@ -5,77 +5,82 @@ import (
 	"enigmacamp.com/final-project/team-4/track-prosto/repository"
 )
 
-type UserUseCase struct {
-	userRepository *repository.UserRepository
+type UserUseCase interface {
+	CreateUser(user *model.User) error
+	UpdateUser(user *model.User) error
+	GetUserByID(id string) (*model.User, error)
+	GetAllUsers() ([]*model.User, error)
+	DeleteUser(id string) error
 }
 
-func NewUserUseCase(userRepository *repository.UserRepository) *UserUseCase {
-	return &UserUseCase{
-		userRepository: userRepository,
+type userUseCase struct {
+	userRepository repository.UserRepository
+}
+
+func NewUserUseCase(userRepo repository.UserRepository) UserUseCase {
+	return &userUseCase{
+		userRepository: userRepo,
 	}
 }
 
-func (uc *UserUseCase) CreateUser(user *model.User) error {
-	// Lakukan validasi atau logika bisnis lainnya sebelum menyimpan pengguna ke dalam repository
-	// ...
+func (uc *userUseCase) CreateUser(user *model.User) error {
+	// Implement any business logic or validation before creating the user
+	// You can also perform data manipulation or enrichment if needed
 
 	err := uc.userRepository.CreateUser(user)
 	if err != nil {
-		// Tangani kesalahan jika terjadi kesalahan saat membuat pengguna
-		// ...
+		// Handle any repository errors or perform error logging
 		return err
 	}
 
 	return nil
 }
 
-func (uc *UserUseCase) UpdateUser(user *model.User) error {
-	// Lakukan validasi atau logika bisnis lainnya sebelum mengupdate pengguna di dalam repository
-	// ...
+func (uc *userUseCase) UpdateUser(user *model.User) error {
+	// Implement any business logic or validation before updating the user
+	// You can also perform data manipulation or enrichment if needed
 
 	err := uc.userRepository.UpdateUser(user)
 	if err != nil {
-		// Tangani kesalahan jika terjadi kesalahan saat mengupdate pengguna
-		// ...
+		// Handle any repository errors or perform error logging
 		return err
 	}
 
 	return nil
 }
 
-func (uc *UserUseCase) DeleteUser(userID string) error {
-	// Lakukan validasi atau logika bisnis lainnya sebelum menghapus pengguna di dalam repository
-	// ...
-
-	err := uc.userRepository.DeleteUser(userID)
+func (uc *userUseCase) GetUserByID(id string) (*model.User, error) {
+	user, err := uc.userRepository.GetUserByID(id)
 	if err != nil {
-		// Tangani kesalahan jika terjadi kesalahan saat menghapus pengguna
-		// ...
-		return err
-	}
-
-	return nil
-}
-
-func (uc *UserUseCase) GetUserByID(userID string) (*model.User, error) {
-	user, err := uc.userRepository.GetUserByID(userID)
-	if err != nil {
-		// Tangani kesalahan jika terjadi kesalahan saat mengambil pengguna berdasarkan ID
-		// ...
+		// Handle any repository errors or perform error logging
 		return nil, err
 	}
+
+	// Perform any additional data processing or transformation if needed
 
 	return user, nil
 }
 
-func (uc *UserUseCase) GetAllUsers() ([]*model.User, error) {
+func (uc *userUseCase) GetAllUsers() ([]*model.User, error) {
 	users, err := uc.userRepository.GetAllUsers()
 	if err != nil {
-		// Tangani kesalahan jika terjadi kesalahan saat mengambil daftar pengguna
-		// ...
+		// Handle any repository errors or perform error logging
 		return nil, err
 	}
-	
+
+	// Perform any additional data processing or transformation if needed
 
 	return users, nil
+}
+
+func (uc *userUseCase) DeleteUser(id string) error {
+	// Implement any business logic or validation before deleting the user
+
+	err := uc.userRepository.DeleteUser(id)
+	if err != nil {
+		// Handle any repository errors or perform error logging
+		return err
+	}
+
+	return nil
 }

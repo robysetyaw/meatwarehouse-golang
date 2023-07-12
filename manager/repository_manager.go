@@ -1,17 +1,18 @@
 package manager
 
+// import "enigmacamp.com/final-project/team-4/track-prosto/repository"
+
 type RepositoryManager interface {
+	
 	// CustomerRepo() repository.CustomerRepository
 }
 
-type repoistoryManager struct {
+type repositoryManager struct {
 	infra InfraManager
 }
 
-// func (r *repoistoryManager) CustomerRepo() repository.CustomerRepository {
-// 	return repository.NewCustomerDbRepository(r.infra.DbConn())
-// }
-
 func NewRepositoryManager(manager InfraManager) RepositoryManager {
-	return &repoistoryManager{infra: manager}
+	return repositoryManager{
+		infra: manager,
+	}
 }

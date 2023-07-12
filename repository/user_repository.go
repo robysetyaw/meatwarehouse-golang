@@ -2,96 +2,102 @@ package repository
 
 import (
 	"database/sql"
-	"log"
-	
+	"errors"
+
+	"time"
 
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 )
 
-type UserRepository struct {
+type UserRepository interface {
+	CreateUser(user *model.User) error
+	UpdateUser(user *model.User) error
+	GetUserByID(id string) (*model.User, error)
+	GetAllUsers() ([]*model.User, error)
+	DeleteUser(id string) error
+}
+
+type userRepository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{db: db}
+func NewUserRepository(db *sql.DB) UserRepository {
+	return &userRepository{db: db}
 }
 
-func (repo *UserRepository) CreateUser(user *model.User) error {
+func (r *userRepository) CreateUser(user *model.User) error {
 	query := `
 		INSERT INTO users (id, username, password, is_active, role, created_at, updated_at, created_by, updated_by)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
-	_, err := repo.db.Exec(query, user.ID, user.Username, user.Password, user.IsActive, user.Role, user.CreatedAt, user.UpdatedAt, user.CreatedBy, user.UpdatedBy)
+	createdAt := time.Now()
+	updatedAt := time.Now()
+
+	_, err := r.db.Exec(query, user.ID, user.Username, user.Password, user.IsActive, user.Role, createdAt, updatedAt, user.CreatedBy, user.UpdatedBy)
 	if err != nil {
-		log.Println("Error creating user:", err)
 		return err
 	}
 
 	return nil
 }
 
-func (repo *UserRepository) UpdateUser(user *model.User) error {
+func (r *userRepository) UpdateUser(user *model.User) error {
 	query := `
 		UPDATE users
-		SET username = $2, password = $3, is_active = $4, role = $5, updated_at = $6, updated_by = $7
-		WHERE id = $1
+		SET username = $1, password = $2, is_active = $3, role = $4, updated_at = $5, updated_by = $6
+		WHERE id = $7
 	`
 
-	_, err := repo.db.Exec(query, user.ID, user.Username, user.Password, user.IsActive, user.Role, user.UpdatedAt, user.UpdatedBy)
+	updatedAt := time.Now()
+
+	_, err := r.db.Exec(query, user.Username, user.Password, user.IsActive, user.Role, updatedAt, user.UpdatedBy, user.ID)
 	if err != nil {
-		log.Println("Error updating user:", err)
 		return err
 	}
 
 	return nil
 }
 
-func (repo *UserRepository) DeleteUser(userID string) error {
-	query := `
-		DELETE FROM users WHERE id = $1
-	`
-
-	_, err := repo.db.Exec(query, userID)
-	if err != nil {
-		log.Println("Error deleting user:", err)
-		return err
-	}
-
-	return nil
-}
-
-func (repo *UserRepository) GetUserByID(userID string) (*model.User, error) {
+func (r *userRepository) GetUserByID(id string) (*model.User, error) {
 	query := `
 		SELECT id, username, password, is_active, role, created_at, updated_at, created_by, updated_by
 		FROM users
 		WHERE id = $1
 	`
 
-	row := repo.db.QueryRow(query, userID)
+	row := r.db.QueryRow(query, id)
 
 	user := &model.User{}
-	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.IsActive, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.CreatedBy, &user.UpdatedBy)
+	err := row.Scan(
+		&user.ID,
+		&user.Username,
+		&user.Password,
+		&user.IsActive,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&user.CreatedBy,
+		&user.UpdatedBy,
+	)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil // User not found
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil // Return nil if no user found
 		}
-		log.Println("Error retrieving user:", err)
 		return nil, err
 	}
 
 	return user, nil
 }
 
-func (repo *UserRepository) GetAllUsers() ([]*model.User, error) {
+func (r *userRepository) GetAllUsers() ([]*model.User, error) {
 	query := `
 		SELECT id, username, password, is_active, role, created_at, updated_at, created_by, updated_by
 		FROM users
 	`
 
-	rows, err := repo.db.Query(query)
+	rows, err := r.db.Query(query)
 	if err != nil {
-		log.Println("Error retrieving users:", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -99,18 +105,36 @@ func (repo *UserRepository) GetAllUsers() ([]*model.User, error) {
 	users := []*model.User{}
 	for rows.Next() {
 		user := &model.User{}
-		err := rows.Scan(&user.ID, &user.Username, &user.Password, &user.IsActive, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.CreatedBy, &user.UpdatedBy)
+		err := rows.Scan(
+			&user.ID,
+			&user.Username,
+			&user.Password,
+			&user.IsActive,
+			&user.Role,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+			&user.CreatedBy,
+			&user.UpdatedBy,
+		)
 		if err != nil {
-			log.Println("Error scanning user row:", err)
-			continue
+			return nil, err
 		}
 		users = append(users, user)
 	}
 
-	if err := rows.Err(); err != nil {
-		log.Println("Error iterating over user rows:", err)
-		return nil, err
+	return users, nil
+}
+
+func (r *userRepository) DeleteUser(id string) error {
+	query := `
+		DELETE FROM users
+		WHERE id = $1
+	`
+
+	_, err := r.db.Exec(query, id)
+	if err != nil {
+		return err
 	}
 
-	return users, nil
+	return nil
 }
