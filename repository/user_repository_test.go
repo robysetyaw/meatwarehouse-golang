@@ -21,7 +21,7 @@ func TestUserRepository_CreateUser_Success(t *testing.T) {
 	repo := NewUserRepository(db)
 
 	// Mock data
-	user := &model.User{
+	user := &model.UserModel{
 		ID:        "1",
 		Username:  "john_doe",
 		Password:  "password",
@@ -56,7 +56,7 @@ func TestUserRepository_CreateUser_Failure(t *testing.T) {
 	repo := NewUserRepository(db)
 
 	// Mock data
-	user := &model.User{
+	user := &model.UserModel{
 		ID:        "1",
 		Username:  "john_doe",
 		Password:  "password",
@@ -140,7 +140,7 @@ func TestUserRepository_UpdateUser_Success(t *testing.T) {
 	repo := NewUserRepository(db)
 
 	// Mock data
-	user := &model.User{
+	user := &model.UserModel{
 		ID:        "1",
 		Username:  "john_doe",
 		Password:  "password",
@@ -165,8 +165,6 @@ func TestUserRepository_UpdateUser_Success(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-
-
 func TestUserRepository_UpdateUser_Error(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -177,7 +175,7 @@ func TestUserRepository_UpdateUser_Error(t *testing.T) {
 	repo := NewUserRepository(db)
 
 	// Mock data
-	user := &model.User{
+	user := &model.UserModel{
 		ID:        "1",
 		Username:  "john_doe",
 		Password:  "password",
@@ -203,11 +201,6 @@ func TestUserRepository_UpdateUser_Error(t *testing.T) {
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
 }
-
-
-
-
-
 
 func TestUserRepository_DeleteUser_Success(t *testing.T) {
 	db, mock, err := sqlmock.New()
@@ -261,7 +254,6 @@ func TestUserRepository_DeleteUser_Error(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-
 func TestUserRepository_GetAllUsers_Success(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -311,7 +303,6 @@ func TestUserRepository_GetAllUsers_Error(t *testing.T) {
 	err = mock.ExpectationsWereMet()
 	assert.NoError(t, err)
 }
-
 
 // ...
 

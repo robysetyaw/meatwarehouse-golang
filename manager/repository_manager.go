@@ -1,17 +1,31 @@
 package manager
 
-type RepositoryManager interface {
-	// CustomerRepo() repository.CustomerRepository
+import (
+	"sync"
+
+	"enigmacamp.com/final-project/team-4/track-prosto/repository"
+)
+
+type RepoManager interface {
+	GetUserRepo() repository.UserRepository
 }
 
-type repoistoryManager struct {
-	infra InfraManager
+type repoManager struct {
+	infraManager InfraManager
+	userRepo     repository.UserRepository
 }
 
-// func (r *repoistoryManager) CustomerRepo() repository.CustomerRepository {
-// 	return repository.NewCustomerDbRepository(r.infra.DbConn())
-// }
+var onceLoadUserRepo sync.Once
 
-func NewRepositoryManager(manager InfraManager) RepositoryManager {
-	return &repoistoryManager{infra: manager}
+func (rm *repoManager) GetUserRepo() repository.UserRepository {
+	onceLoadUserRepo.Do(func() {
+		rm.userRepo = repository.NewUserRepository(rm.infraManager.DbConn())
+	})
+	return rm.userRepo
+}
+
+func NewRepoManager(infraManager InfraManager) RepoManager {
+	return &repoManager{
+		infraManager: infraManager,
+	}
 }
