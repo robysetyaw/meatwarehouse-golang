@@ -14,6 +14,8 @@ func (s *Server) Run() {
 		panic(err)
 	}
 }
+
+
 func NewServer() *Server {
 	r := gin.Default()
 	return &Server{engine: r}
