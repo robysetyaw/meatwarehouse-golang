@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 
+	"enigmacamp.com/final-project/team-4/track-prosto/delivery/middleware"
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/usecase"
 	"github.com/gin-gonic/gin"
@@ -19,11 +20,11 @@ func NewUserController(r *gin.Engine, userUC usecase.UserUseCase) {
 		userUseCase: userUC,
 	}
 
-	r.POST("/users", userController.CreateUser)
+	r.POST("/users", middleware.JWTAuthMiddleware(),userController.CreateUser)
 	r.PUT("/users/:id", userController.UpdateUser)
 	// r.GET("/users/:id", userController.GetUserByID)
 	r.GET("/users/:username", userController.GetUserByUsername)
-	r.GET("/users", userController.GetAllUsers)
+	r.GET("/users",middleware.JWTAuthMiddleware(), userController.GetAllUsers)
 	r.DELETE("/users/:id", userController.DeleteUser)
 }
 func (uc *UserController) CreateUser(c *gin.Context) {

@@ -18,6 +18,7 @@ type server struct {
 func (s *server) Run() {
 	s.srv.Use()
 	controller.NewUserController(s.srv, s.usecaseManager.GetUserUsecase())
+	controller.NewLoginController(s.srv, s.usecaseManager.GetLoginUsecase())
 	s.srv.Run()
 }
 
