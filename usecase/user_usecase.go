@@ -75,6 +75,7 @@ func (uc *UserUseCase) GetAllUsers() ([]*model.User, error) {
 		// ...
 		return nil, err
 	}
+	
 
 	return users, nil
 }

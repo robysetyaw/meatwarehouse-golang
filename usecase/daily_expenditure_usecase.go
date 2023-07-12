@@ -26,6 +26,7 @@ func (uc *DailyExpenditureUseCase) CreateDailyExpenditure(dailyExpenditure *mode
 		return err
 	}
 
+
 	return nil
 }
 
