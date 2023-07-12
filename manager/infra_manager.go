@@ -20,7 +20,7 @@ type infraManager struct {
 
 func (im *infraManager) GetDB() *sql.DB {
 	onceLoadDB.Do(func() {
-		db, err := sql.Open("postgres", "user=postgres host=localhost password=root dbname=enigmalivecode2 sslmode=disable")
+		db, err := sql.Open("postgres", "user=postgres host=localhost password=root dbname=meatwarehouse sslmode=disable")
 		if err != nil {
 			log.Fatal("Cannot start app, error when connect to DB", err.Error())
 		}

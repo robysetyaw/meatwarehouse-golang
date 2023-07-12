@@ -1,6 +1,9 @@
 package usecase
 
 import (
+	"fmt"
+	"time"
+
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/repository"
 )
@@ -11,6 +14,7 @@ type UserUseCase interface {
 	GetUserByID(id string) (*model.User, error)
 	GetAllUsers() ([]*model.User, error)
 	DeleteUser(id string) error
+	GetUserByUsername(username string) (*model.User, error)
 }
 
 type userUseCase struct {
@@ -26,8 +30,21 @@ func NewUserUseCase(userRepo repository.UserRepository) UserUseCase {
 func (uc *userUseCase) CreateUser(user *model.User) error {
 	// Implement any business logic or validation before creating the user
 	// You can also perform data manipulation or enrichment if needed
+	
+	
+	existingUser, err := uc.userRepository.GetByUsername(user.Username)
+	if err != nil {
+		return fmt.Errorf("failed to check username existence: %v", err)
+	}
+	if existingUser != nil {
+		return fmt.Errorf("username already exists")
+	}
 
-	err := uc.userRepository.CreateUser(user)
+	user.IsActive = true
+	user.CreatedAt = time.Now()
+	user.CreatedBy = "admin"
+
+	err = uc.userRepository.CreateUser(user)
 	if err != nil {
 		// Handle any repository errors or perform error logging
 		return err
@@ -51,6 +68,18 @@ func (uc *userUseCase) UpdateUser(user *model.User) error {
 
 func (uc *userUseCase) GetUserByID(id string) (*model.User, error) {
 	user, err := uc.userRepository.GetUserByID(id)
+	if err != nil {
+		// Handle any repository errors or perform error logging
+		return nil, err
+	}
+
+	// Perform any additional data processing or transformation if needed
+
+	return user, nil
+}
+
+func (uc *userUseCase) GetUserByUsername(username string) (*model.User, error) {
+	user, err := uc.userRepository.GetByUsername(username)
 	if err != nil {
 		// Handle any repository errors or perform error logging
 		return nil, err

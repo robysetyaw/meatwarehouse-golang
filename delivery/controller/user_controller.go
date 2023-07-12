@@ -21,7 +21,8 @@ func NewUserController(r *gin.Engine, userUC usecase.UserUseCase) {
 
 	r.POST("/users", userController.CreateUser)
 	r.PUT("/users/:id", userController.UpdateUser)
-	r.GET("/users/:id", userController.GetUserByID)
+	// r.GET("/users/:id", userController.GetUserByID)
+	r.GET("/users/:username", userController.GetUserByUsername)
 	r.GET("/users", userController.GetAllUsers)
 	r.DELETE("/users/:id", userController.DeleteUser)
 }
@@ -33,7 +34,6 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	}
 
 	user.ID = uuid.New().String()
-	
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to encrypt password"})
@@ -43,7 +43,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	user.Password = string(hashedPassword)
 
 	if err := uc.userUseCase.CreateUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -61,7 +61,7 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 	user.ID = userID
 
 	if err := uc.userUseCase.UpdateUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -72,6 +72,22 @@ func (uc *UserController) GetUserByID(c *gin.Context) {
 	userID := c.Param("id")
 
 	user, err := uc.userUseCase.GetUserByID(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
+		return
+	}
+	if user == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+func (uc *UserController) GetUserByUsername(c *gin.Context) {
+	username := c.Param("username")
+
+	user, err := uc.userUseCase.GetUserByUsername(username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
 		return
