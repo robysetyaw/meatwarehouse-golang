@@ -15,21 +15,24 @@ type JwtClaims struct {
 	ApplicationName string
 }
 
-func GenerateToken(userName string) (string, error) {
-	now := time.Now().UTC()
-	end := now.Add(1 * time.Hour)
-	claim := &JwtClaims{
-		Username: userName,
+func GenerateJWTToken(userID, username, role string) (string, error) {
+	// Membuat claim JWT
+	claims := jwt.MapClaims{
+		"user_id":  userID,
+		"username": username,
+		"role":     role,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(), // Token berlaku selama 1 hari
 	}
-	claim.IssuedAt = now.Unix()
-	claim.ExpiresAt = end.Unix()
 
-	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-	token, err := t.SignedString([]byte(KEY))
+	// Membuat token JWT dengan menggunakan secret key
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	secretKey := []byte("secret-key") // Ganti dengan secret key Anda sendiri
+	signedToken, err := token.SignedString(secretKey)
 	if err != nil {
-		return "", fmt.Errorf("error on GenerateToken : %w", err)
+		return "", err
 	}
-	return token, nil
+
+	return signedToken, nil
 }
 
 func VerifyAccessToken(tokenString string) (string, error) {

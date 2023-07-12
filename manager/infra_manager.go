@@ -21,9 +21,9 @@ type infraManager struct {
 var onceLoadDB sync.Once
 
 func (i *infraManager) initDb() {
-	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", i.cfg.Host, i.cfg.Port, i.cfg.User, i.cfg.Password, i.cfg.Name)
+	psqlconn := fmt.Sprintf("user=%s host=%s password=%s dbname=%s sslmode=disable", i.cfg.User, i.cfg.Host, i.cfg.Password, i.cfg.Name)
 	onceLoadDB.Do(func() {
-		db, err := sql.Open("postgres", psqlconn)
+		db, err := sql.Open(i.cfg.Driver, psqlconn)
 		if err != nil {
 			panic(err)
 		}

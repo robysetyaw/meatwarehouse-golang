@@ -26,7 +26,7 @@ func NewUserUseCase(userRepository repository.UserRepository) UserUseCase {
 func (uc *userUseCaseImpl) CreateUser(user *model.UserModel) error {
 	isNameExist, err := uc.userRepository.GetUserByName(user.Username)
 	if err != nil {
-		return fmt.Errorf("userUseCaseImplImpl.InsertService() : %w", err)
+		return fmt.Errorf("userUseCaseImplImpl.CreateUser() : %w", err)
 	}
 
 	if isNameExist != nil {
@@ -41,6 +41,7 @@ func (uc *userUseCaseImpl) CreateUser(user *model.UserModel) error {
 	}
 	user.Password = string(hashedPassword)
 	user.CreatedAt = time.Now()
+	fmt.Println(user)
 	return uc.userRepository.CreateUser(user)
 }
 
