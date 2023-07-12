@@ -3,6 +3,7 @@ CREATE TABLE daily_expenditures (
     user_id VARCHAR,
     amount NUMERIC,
     description VARCHAR,
+    is_active BOOLEAN,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     created_by VARCHAR,
