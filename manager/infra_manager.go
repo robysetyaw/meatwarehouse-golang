@@ -2,43 +2,34 @@ package manager
 
 import (
 	"database/sql"
-	"fmt"
+	"log"
 	"sync"
 
-	"enigmacamp.com/final-project/team-4/track-prosto/config"
 	_ "github.com/lib/pq"
 )
 
+var onceLoadDB sync.Once
+
 type InfraManager interface {
-	DbConn() *sql.DB
+	GetDB() *sql.DB
 }
 
 type infraManager struct {
-	db  *sql.DB
-	cfg config.Config
+	db *sql.DB
 }
 
-var onceLoadDB sync.Once
-
-func (i *infraManager) initDb() {
-	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", i.cfg.Host, i.cfg.Port, i.cfg.User, i.cfg.Password, i.cfg.Name)
+func (im *infraManager) GetDB() *sql.DB {
 	onceLoadDB.Do(func() {
-		db, err := sql.Open("postgres", psqlconn)
+		db, err := sql.Open("postgres", "user=postgres host=localhost password=root dbname=enigmalivecode2 sslmode=disable")
 		if err != nil {
-			panic(err)
+			log.Fatal("Cannot start app, error when connect to DB", err.Error())
 		}
-		i.db = db
+
+		im.db = db
 	})
-	fmt.Println("DB Connected")
-}
-func (i *infraManager) DbConn() *sql.DB {
-	return i.db
+	return im.db
 }
 
-func NewInfraManager(config config.Config) InfraManager {
-	infra := infraManager{
-		cfg: config,
-	}
-	infra.initDb()
-	return &infra
+func NewInfraManager() InfraManager {
+	return &infraManager{}
 }

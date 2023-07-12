@@ -1,20 +1,36 @@
 package delivery
 
 import (
+	"enigmacamp.com/final-project/team-4/track-prosto/delivery/controller"
+	"enigmacamp.com/final-project/team-4/track-prosto/manager"
 	"github.com/gin-gonic/gin"
 )
 
-type Server struct {
-	engine *gin.Engine
+type Server interface {
+	Run()
 }
 
-func (s *Server) Run() {
-	err := s.engine.Run()
-	if err != nil {
-		panic(err)
-	}
+type server struct {
+	usecaseManager manager.UsecaseManager
+	srv            *gin.Engine
 }
-func NewServer() *Server {
-	r := gin.Default()
-	return &Server{engine: r}
+
+func (s *server) Run() {
+	s.srv.Use()
+	controller.NewUserController(s.srv, s.usecaseManager.GetUserUsecase())
+	s.srv.Run()
+}
+
+func NewServer() Server {
+	infra := manager.NewInfraManager()
+	repo := manager.NewRepoManager(infra)
+	usecase := manager.NewUsecaseManager(repo)
+
+	srv := gin.Default()
+
+	return &server{
+		usecaseManager: usecase,
+		srv:            srv,
+	}
+
 }
