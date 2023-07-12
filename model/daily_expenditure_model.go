@@ -8,7 +8,6 @@ type DailyExpenditure struct {
 	Amount      float64   `json:"amount" binding:"required"`
 	Description string    `json:"description"`
 	IsActive    bool      `json:"is_active"`
-	Role        string    `json:"role"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	CreatedBy   string    `json:"created_by"`

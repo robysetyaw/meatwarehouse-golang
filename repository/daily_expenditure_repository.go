@@ -27,19 +27,15 @@ func NewDailyExpenditureRepository(db *sql.DB) DailyExpenditureRepository {
 }
 
 func (repo *dailyExpenditureRepository) CreateDailyExpenditure(expenditure *model.DailyExpenditure) error {
-	// Generate unique ID for the daily expenditure
-	expenditure.ID = generateID()
-
-	// Set created_at and updated_at timestamps
 	now := time.Now()
 	expenditure.CreatedAt = now
 	expenditure.UpdatedAt = now
 
 	// Perform database insert operation
 	_, err := repo.db.Exec(`
-		INSERT INTO daily_expenditures (id, user_id, amount, description, is_active, role, created_at, updated_at, created_by, updated_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-	`, expenditure.ID, expenditure.UserID, expenditure.Amount, expenditure.Description, expenditure.IsActive, expenditure.Role, expenditure.CreatedAt, expenditure.UpdatedAt, expenditure.CreatedBy, expenditure.UpdatedBy)
+		INSERT INTO daily_expenditures (id, user_id, amount, description, is_active, created_at, updated_at, created_by, updated_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`, expenditure.ID, expenditure.UserID, expenditure.Amount, expenditure.Description, expenditure.IsActive,  expenditure.CreatedAt, expenditure.UpdatedAt, expenditure.CreatedBy, expenditure.CreatedBy)
 	if err != nil {
 		return fmt.Errorf("failed to create daily expenditure: %w", err)
 	}
@@ -54,9 +50,9 @@ func (repo *dailyExpenditureRepository) UpdateDailyExpenditure(expenditure *mode
 	// Perform database update operation
 	_, err := repo.db.Exec(`
 		UPDATE daily_expenditures
-		SET amount = $1, description = $2, is_active = $3, role = $4, updated_at = $5, updated_by = $6
+		SET amount = $1, description = $2, is_active = $3,  updated_at = $5, updated_by = $6
 		WHERE id = $7
-	`, expenditure.Amount, expenditure.Description, expenditure.IsActive, expenditure.Role, expenditure.UpdatedAt, expenditure.UpdatedBy, expenditure.ID)
+	`, expenditure.Amount, expenditure.Description, expenditure.IsActive, expenditure.UpdatedAt, expenditure.UpdatedBy, expenditure.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update daily expenditure: %w", err)
 	}
@@ -78,7 +74,6 @@ func (repo *dailyExpenditureRepository) GetDailyExpenditureByID(id string) (*mod
 		&expenditure.Amount,
 		&expenditure.Description,
 		&expenditure.IsActive,
-		&expenditure.Role,
 		&expenditure.CreatedAt,
 		&expenditure.UpdatedAt,
 		&expenditure.CreatedBy,
@@ -115,7 +110,6 @@ func (repo *dailyExpenditureRepository) GetAllDailyExpenditures() ([]*model.Dail
 			&expenditure.Amount,
 			&expenditure.Description,
 			&expenditure.IsActive,
-			&expenditure.Role,
 			&expenditure.CreatedAt,
 			&expenditure.UpdatedAt,
 			&expenditure.CreatedBy,
@@ -140,11 +134,4 @@ func (repo *dailyExpenditureRepository) DeleteDailyExpenditure(id string) error 
 	}
 
 	return nil
-}
-
-// Helper function to generate a unique ID for the daily expenditure
-func generateID() string {
-	// Implement your own logic to generate a unique ID, e.g., using UUID
-	// ...
-	return "generated-id" // Placeholder value, replace with actual implementation
 }

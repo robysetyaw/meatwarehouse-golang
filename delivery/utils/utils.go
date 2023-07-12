@@ -42,3 +42,19 @@ func VerifyJWTToken(tokenString string) (jwt.MapClaims, error) {
 
 	return nil, errors.New("invalid token")
 }
+
+func ParseJWTToken(tokenString string, secretKey []byte, claims jwt.Claims) (*jwt.Token, error) {
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return secretKey, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if token.Valid {
+		return token, nil
+	}
+
+	return nil, errors.New("invalid token")
+}

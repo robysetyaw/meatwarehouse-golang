@@ -8,16 +8,18 @@ import (
 
 type RepoManager interface {
 	GetUserRepo() repository.UserRepository
+	GetDailyExpenditureRepo() repository.DailyExpenditureRepository
 }
 
 type repoManager struct {
 	infraManager InfraManager
 
 	userRepo repository.UserRepository
+	dailyExpenditureRepo repository.DailyExpenditureRepository
 }
 
 var onceLoadUserRepo sync.Once
-var onceLoadFarmerRepo sync.Once
+var onceLoadDailyExpenditureRepo sync.Once
 var onceLoadPlantRepo sync.Once
 var onceLoadBillRepo sync.Once
 
@@ -26,6 +28,13 @@ func (rm *repoManager) GetUserRepo() repository.UserRepository {
 		rm.userRepo = repository.NewUserRepository(rm.infraManager.GetDB())
 	})
 	return rm.userRepo
+}
+
+func (rm *repoManager) GetDailyExpenditureRepo() repository.DailyExpenditureRepository {
+	onceLoadDailyExpenditureRepo.Do(func() {
+		rm.dailyExpenditureRepo = repository.NewDailyExpenditureRepository(rm.infraManager.GetDB())
+	})
+	return rm.dailyExpenditureRepo
 }
 
 func NewRepoManager(infraManager InfraManager) RepoManager {
