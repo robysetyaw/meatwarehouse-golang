@@ -5,77 +5,46 @@ import (
 	"enigmacamp.com/final-project/team-4/track-prosto/repository"
 )
 
-type DailyExpenditureUseCase struct {
-	dailyExpenditureRepository *repository.DailyExpenditureRepository
+type DailyExpenditureUseCase interface {
+	CreateDailyExpenditure(expenditure *model.DailyExpenditure) error
+	UpdateDailyExpenditure(expenditure *model.DailyExpenditure) error
+	GetDailyExpenditureByID(id string) (*model.DailyExpenditure, error)
+	GetAllDailyExpenditures() ([]*model.DailyExpenditure, error)
+	DeleteDailyExpenditure(id string) error
 }
 
-func NewDailyExpenditureUseCase(dailyExpenditureRepository *repository.DailyExpenditureRepository) *DailyExpenditureUseCase {
-	return &DailyExpenditureUseCase{
-		dailyExpenditureRepository: dailyExpenditureRepository,
+type dailyExpenditureUseCase struct {
+	dailyExpenditureRepo repository.DailyExpenditureRepository
+}
+
+func NewDailyExpenditureUseCase(deRepo repository.DailyExpenditureRepository) DailyExpenditureUseCase {
+	return &dailyExpenditureUseCase{
+		dailyExpenditureRepo: deRepo,
 	}
 }
 
-func (uc *DailyExpenditureUseCase) CreateDailyExpenditure(dailyExpenditure *model.DailyExpenditure) error {
-	// Lakukan validasi atau logika bisnis lainnya sebelum menyimpan pengeluaran harian ke dalam repository
+func (uc *dailyExpenditureUseCase) CreateDailyExpenditure(expenditure *model.DailyExpenditure) error {
+	// Perform any business logic or validation before creating the daily expenditure
 	// ...
 
-	err := uc.dailyExpenditureRepository.CreateDailyExpenditure(dailyExpenditure)
-	if err != nil {
-		// Tangani kesalahan jika terjadi kesalahan saat membuat pengeluaran harian
-		// ...
-		return err
-	}
-
-
-	return nil
+	return uc.dailyExpenditureRepo.CreateDailyExpenditure(expenditure)
 }
 
-func (uc *DailyExpenditureUseCase) UpdateDailyExpenditure(dailyExpenditure *model.DailyExpenditure) error {
-	// Lakukan validasi atau logika bisnis lainnya sebelum mengupdate pengeluaran harian di dalam repository
+func (uc *dailyExpenditureUseCase) UpdateDailyExpenditure(expenditure *model.DailyExpenditure) error {
+	// Perform any business logic or validation before updating the daily expenditure
 	// ...
 
-	err := uc.dailyExpenditureRepository.UpdateDailyExpenditure(dailyExpenditure)
-	if err != nil {
-		// Tangani kesalahan jika terjadi kesalahan saat mengupdate pengeluaran harian
-		// ...
-		return err
-	}
-
-	return nil
+	return uc.dailyExpenditureRepo.UpdateDailyExpenditure(expenditure)
 }
 
-func (uc *DailyExpenditureUseCase) DeleteDailyExpenditure(dailyExpenditureID string) error {
-	// Lakukan validasi atau logika bisnis lainnya sebelum menghapus pengeluaran harian di dalam repository
-	// ...
-
-	err := uc.dailyExpenditureRepository.DeleteDailyExpenditure(dailyExpenditureID)
-	if err != nil {
-		// Tangani kesalahan jika terjadi kesalahan saat menghapus pengeluaran harian
-		// ...
-		return err
-	}
-
-	return nil
+func (uc *dailyExpenditureUseCase) GetDailyExpenditureByID(id string) (*model.DailyExpenditure, error) {
+	return uc.dailyExpenditureRepo.GetDailyExpenditureByID(id)
 }
 
-func (uc *DailyExpenditureUseCase) GetDailyExpenditureByID(dailyExpenditureID string) (*model.DailyExpenditure, error) {
-	dailyExpenditure, err := uc.dailyExpenditureRepository.GetDailyExpenditureByID(dailyExpenditureID)
-	if err != nil {
-		// Tangani kesalahan jika terjadi kesalahan saat mengambil pengeluaran harian berdasarkan ID
-		// ...
-		return nil, err
-	}
-
-	return dailyExpenditure, nil
+func (uc *dailyExpenditureUseCase) GetAllDailyExpenditures() ([]*model.DailyExpenditure, error) {
+	return uc.dailyExpenditureRepo.GetAllDailyExpenditures()
 }
 
-func (uc *DailyExpenditureUseCase) GetAllDailyExpenditures() ([]*model.DailyExpenditure, error) {
-	dailyExpenditures, err := uc.dailyExpenditureRepository.GetAllDailyExpenditures()
-	if err != nil {
-		// Tangani kesalahan jika terjadi kesalahan saat mengambil daftar pengeluaran harian
-		// ...
-		return nil, err
-	}
-
-	return dailyExpenditures, nil
+func (uc *dailyExpenditureUseCase) DeleteDailyExpenditure(id string) error {
+	return uc.dailyExpenditureRepo.DeleteDailyExpenditure(id)
 }
