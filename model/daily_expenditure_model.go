@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 type DailyExpenditure struct {
 	ID          string    `json:"id"`
@@ -8,9 +10,9 @@ type DailyExpenditure struct {
 	Amount      float64   `json:"amount" binding:"required"`
 	Description string    `json:"description"`
 	IsActive    bool      `json:"is_active"`
-	Role        string    `json:"role"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	CreatedBy   string    `json:"created_by"`
 	UpdatedBy   string    `json:"updated_by"`
+	Date        string    `json:"date"`
 }

@@ -4,133 +4,155 @@ import (
 	"net/http"
 	"time"
 
+	"enigmacamp.com/final-project/team-4/track-prosto/delivery/middleware"
+	"enigmacamp.com/final-project/team-4/track-prosto/delivery/utils"
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/usecase"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type DailyExpenditureController struct {
-	dailyExpenditureUseCase *usecase.DailyExpenditureUseCase
+	dailyExpenditureUseCase usecase.DailyExpenditureUseCase
 }
 
-
-
-func NewDailyExpenditureController(dailyExpenditureUseCase *usecase.DailyExpenditureUseCase, router *gin.Engine) *DailyExpenditureController {
+func NewDailyExpenditureController(r *gin.Engine, deUC usecase.DailyExpenditureUseCase) *DailyExpenditureController {
 	controller := &DailyExpenditureController{
-		dailyExpenditureUseCase: dailyExpenditureUseCase,
+		dailyExpenditureUseCase: deUC,
 	}
 
-	router.POST("/daily-expenditures", controller.CreateDailyExpenditure)
-	router.PUT("/daily-expenditures/:id", controller.UpdateDailyExpenditure)
-	router.DELETE("/daily-expenditures/:id", controller.DeleteDailyExpenditure)
-	router.GET("/daily-expenditures/:id", controller.GetDailyExpenditureByID)
-	router.GET("/daily-expenditures", controller.GetAllDailyExpenditures)
+	r.POST("/daily-expenditures",middleware.JWTAuthMiddleware(), controller.CreateDailyExpenditure)
+	r.PUT("/daily-expenditures/:id",middleware.JWTAuthMiddleware(), controller.UpdateDailyExpenditure)
+	r.GET("/daily-expenditures/:id",middleware.JWTAuthMiddleware(), controller.GetDailyExpenditureByID)
+	r.GET("/daily-expenditures",middleware.JWTAuthMiddleware(), controller.GetAllDailyExpenditures)
+	r.DELETE("/daily-expenditures/:id",middleware.JWTAuthMiddleware(), controller.DeleteDailyExpenditure)
+	r.GET("/daily-expenditures/total", controller.GetTotalExpenditureByDateRange)
+
 
 	return controller
 }
 
-func (dc *DailyExpenditureController) CreateDailyExpenditure(c *gin.Context) {
-	// Mengambil data dari request
-	var request model.DailyExpenditure
-	if err := c.ShouldBindJSON(&request); err != nil {
+func (dec *DailyExpenditureController) GetTotalExpenditureByDateRange(c *gin.Context) {
+    var payload struct {
+        StartDate string `json:"start_date"`
+        EndDate   string `json:"end_date"`
+    }
+
+    if err := c.ShouldBindJSON(&payload); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+	
+
+    startDate, err := time.Parse("2006-01-02", payload.StartDate)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date"})
+        return
+    }
+
+    endDate, err := time.Parse("2006-01-02", payload.EndDate)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date"})
+        return
+    }
+
+    total, err := dec.dailyExpenditureUseCase.GetTotalExpenditureByDateRange(startDate, endDate)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get total expenditure"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"total_expenditure": total})
+}
+
+
+
+func (dec *DailyExpenditureController) CreateDailyExpenditure(c *gin.Context) {
+	var expenditure model.DailyExpenditure
+	if err := c.ShouldBindJSON(&expenditure); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	dailyExpenditure := &model.DailyExpenditure{
-		ID:          request.ID,
-		UserID:      request.UserID,
-		Amount:      request.Amount,
-		Description: request.Description,
-		IsActive:    request.IsActive,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		CreatedBy:   request.CreatedBy,
-		UpdatedBy:   request.UpdatedBy,
+	token, err := utils.ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
+		return
 	}
 
-	err := dc.dailyExpenditureUseCase.CreateDailyExpenditure(dailyExpenditure)
+	claims, err := utils.VerifyJWTToken(token)
 	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	userID := claims["user_id"].(string)
+	userName := claims["username"].(string)
+	expenditure.UserID = userID
+	expenditure.CreatedBy = userName
+	expenditure.ID = uuid.New().String()
+
+	if err := dec.dailyExpenditureUseCase.CreateDailyExpenditure(&expenditure); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create daily expenditure"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Daily expenditure created successfully"})
+	c.JSON(http.StatusOK, expenditure)
 }
 
-func (dc *DailyExpenditureController) UpdateDailyExpenditure(c *gin.Context) {
-	// Mengambil ID pengeluaran harian dari URL parameter
-	id := c.Param("id")
+func (dec *DailyExpenditureController) UpdateDailyExpenditure(c *gin.Context) {
+	expenditureID := c.Param("id")
 
-	// Mengambil data dari request
-	var request model.DailyExpenditure
-	if err := c.ShouldBindJSON(&request); err != nil {
+	var expenditure model.DailyExpenditure
+	if err := c.ShouldBindJSON(&expenditure); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	existingDailyExpenditure, err := dc.dailyExpenditureUseCase.GetDailyExpenditureByID(id)
-	if err != nil {
+	expenditure.ID = expenditureID
+
+	if err := dec.dailyExpenditureUseCase.UpdateDailyExpenditure(&expenditure); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update daily expenditure"})
 		return
 	}
-	if existingDailyExpenditure == nil {
+
+	c.JSON(http.StatusOK, expenditure)
+}
+
+func (dec *DailyExpenditureController) GetDailyExpenditureByID(c *gin.Context) {
+	expenditureID := c.Param("id")
+
+	expenditure, err := dec.dailyExpenditureUseCase.GetDailyExpenditureByID(expenditureID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get daily expenditure"})
+		return
+	}
+
+	if expenditure == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Daily expenditure not found"})
 		return
 	}
 
-	existingDailyExpenditure.UserID = request.UserID
-	existingDailyExpenditure.Amount = request.Amount
-	existingDailyExpenditure.Description = request.Description
-	existingDailyExpenditure.IsActive = request.IsActive
-	existingDailyExpenditure.UpdatedAt = time.Now()
-	existingDailyExpenditure.UpdatedBy = request.UpdatedBy
+	c.JSON(http.StatusOK, expenditure)
+}
 
-	err = dc.dailyExpenditureUseCase.UpdateDailyExpenditure(existingDailyExpenditure)
+func (dec *DailyExpenditureController) GetAllDailyExpenditures(c *gin.Context) {
+	expenditures, err := dec.dailyExpenditureUseCase.GetAllDailyExpenditures()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update daily expenditure"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get daily expenditures"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Daily expenditure updated successfully"})
+	c.JSON(http.StatusOK, expenditures)
 }
 
-func (dc *DailyExpenditureController) DeleteDailyExpenditure(c *gin.Context) {
-	// Mengambil ID pengeluaran harian dari URL parameter
-	id := c.Param("id")
+func (dec *DailyExpenditureController) DeleteDailyExpenditure(c *gin.Context) {
+	expenditureID := c.Param("id")
 
-	err := dc.dailyExpenditureUseCase.DeleteDailyExpenditure(id)
-	if err != nil {
+	if err := dec.dailyExpenditureUseCase.DeleteDailyExpenditure(expenditureID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete daily expenditure"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Daily expenditure deleted successfully"})
-}
-
-func (dc *DailyExpenditureController) GetDailyExpenditureByID(c *gin.Context) {
-	// Mengambil ID pengeluaran harian dari URL parameter
-	id := c.Param("id")
-
-	dailyExpenditure, err := dc.dailyExpenditureUseCase.GetDailyExpenditureByID(id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve daily expenditure"})
-		return
-	}
-	if dailyExpenditure == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Daily expenditure not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": dailyExpenditure})
-}
-
-func (dc *DailyExpenditureController) GetAllDailyExpenditures(c *gin.Context) {
-	dailyExpenditures, err := dc.dailyExpenditureUseCase.GetAllDailyExpenditures()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve daily expenditures"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": dailyExpenditures})
 }
