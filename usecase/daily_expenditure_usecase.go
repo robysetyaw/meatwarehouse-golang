@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"time"
+
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/repository"
 )
@@ -11,6 +13,7 @@ type DailyExpenditureUseCase interface {
 	GetDailyExpenditureByID(id string) (*model.DailyExpenditure, error)
 	GetAllDailyExpenditures() ([]*model.DailyExpenditure, error)
 	DeleteDailyExpenditure(id string) error
+	GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error)
 }
 
 type dailyExpenditureUseCase struct {
@@ -47,4 +50,8 @@ func (uc *dailyExpenditureUseCase) GetAllDailyExpenditures() ([]*model.DailyExpe
 
 func (uc *dailyExpenditureUseCase) DeleteDailyExpenditure(id string) error {
 	return uc.dailyExpenditureRepo.DeleteDailyExpenditure(id)
+}
+
+func (uc *dailyExpenditureUseCase) GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error) {
+    return uc.dailyExpenditureRepo.GetTotalExpenditureByDateRange(startDate, endDate)
 }

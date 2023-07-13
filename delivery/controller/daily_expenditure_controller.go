@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"time"
 
 	"enigmacamp.com/final-project/team-4/track-prosto/delivery/middleware"
 	"enigmacamp.com/final-project/team-4/track-prosto/delivery/utils"
@@ -25,9 +26,46 @@ func NewDailyExpenditureController(r *gin.Engine, deUC usecase.DailyExpenditureU
 	r.GET("/daily-expenditures/:id",middleware.JWTAuthMiddleware(), controller.GetDailyExpenditureByID)
 	r.GET("/daily-expenditures",middleware.JWTAuthMiddleware(), controller.GetAllDailyExpenditures)
 	r.DELETE("/daily-expenditures/:id",middleware.JWTAuthMiddleware(), controller.DeleteDailyExpenditure)
+	r.GET("/daily-expenditures/total", controller.GetTotalExpenditureByDateRange)
+
 
 	return controller
 }
+
+func (dec *DailyExpenditureController) GetTotalExpenditureByDateRange(c *gin.Context) {
+    var payload struct {
+        StartDate string `json:"start_date"`
+        EndDate   string `json:"end_date"`
+    }
+
+    if err := c.ShouldBindJSON(&payload); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+	
+
+    startDate, err := time.Parse("2006-01-02", payload.StartDate)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date"})
+        return
+    }
+
+    endDate, err := time.Parse("2006-01-02", payload.EndDate)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date"})
+        return
+    }
+
+    total, err := dec.dailyExpenditureUseCase.GetTotalExpenditureByDateRange(startDate, endDate)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get total expenditure"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"total_expenditure": total})
+}
+
+
 
 func (dec *DailyExpenditureController) CreateDailyExpenditure(c *gin.Context) {
 	var expenditure model.DailyExpenditure

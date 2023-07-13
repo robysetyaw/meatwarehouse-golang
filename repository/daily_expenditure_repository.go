@@ -14,6 +14,7 @@ type DailyExpenditureRepository interface {
 	GetDailyExpenditureByID(id string) (*model.DailyExpenditure, error)
 	GetAllDailyExpenditures() ([]*model.DailyExpenditure, error)
 	DeleteDailyExpenditure(id string) error
+	GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error)
 }
 
 type dailyExpenditureRepository struct {
@@ -25,6 +26,20 @@ func NewDailyExpenditureRepository(db *sql.DB) DailyExpenditureRepository {
 		db: db,
 	}
 }
+
+func (repo *dailyExpenditureRepository) GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error) {
+    var total float64
+    err := repo.db.QueryRow(`
+        SELECT SUM(amount) FROM daily_expenditures
+        WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2
+    `, startDate, endDate).Scan(&total)
+    if err != nil {
+        return 0, fmt.Errorf("failed to get total expenditure: %w", err)
+    }
+	fmt.Print(startDate)
+    return total, nil
+}
+
 
 func (repo *dailyExpenditureRepository) CreateDailyExpenditure(expenditure *model.DailyExpenditure) error {
 	now := time.Now()
@@ -92,7 +107,7 @@ func (repo *dailyExpenditureRepository) GetDailyExpenditureByID(id string) (*mod
 func (repo *dailyExpenditureRepository) GetAllDailyExpenditures() ([]*model.DailyExpenditure, error) {
 	// Perform database query to retrieve all daily expenditures
 	rows, err := repo.db.Query(`
-		SELECT id, user_id, amount, description, is_active, role, created_at, updated_at, created_by, updated_by
+		SELECT id, user_id, amount, description, is_active, created_at, updated_at, created_by, updated_by
 		FROM daily_expenditures
 	`)
 	if err != nil {
