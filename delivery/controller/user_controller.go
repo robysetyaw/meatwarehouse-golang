@@ -1,14 +1,11 @@
 package controller
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 
 	"enigmacamp.com/final-project/team-4/track-prosto/delivery/middleware"
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/usecase"
-	"enigmacamp.com/final-project/team-4/track-prosto/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"

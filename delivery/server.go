@@ -1,10 +1,7 @@
 package delivery
 
 import (
-<<<<<<< HEAD
 	"enigmacamp.com/final-project/team-4/track-prosto/config"
-=======
->>>>>>> origin/dev-borr
 	"enigmacamp.com/final-project/team-4/track-prosto/delivery/controller"
 	"enigmacamp.com/final-project/team-4/track-prosto/manager"
 	"github.com/gin-gonic/gin"

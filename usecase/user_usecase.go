@@ -6,14 +6,13 @@ import (
 
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/repository"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type UserUseCase interface {
-<<<<<<< HEAD
-	CreateUser(*model.UserModel) error
-}
-type userUseCaseImpl struct {
+	CreateUser(user *model.User) error
+	UpdateUser(user *model.User) error
+	GetUserByID(id string) (*model.User, error)
+	GetAllUsers() ([]*model.User, error)
 	DeleteUser(id string) error
 	GetUserByUsername(username string) (*model.User, error)
 }
@@ -31,8 +30,7 @@ func NewUserUseCase(userRepo repository.UserRepository) UserUseCase {
 func (uc *userUseCase) CreateUser(user *model.User) error {
 	// Implement any business logic or validation before creating the user
 	// You can also perform data manipulation or enrichment if needed
-	
-	
+
 	existingUser, err := uc.userRepository.GetByUsername(user.Username)
 	if err != nil {
 		return fmt.Errorf("failed to check username existence: %v", err)
@@ -126,4 +124,3 @@ func (uc *userUseCase) DeleteUser(user string) error {
 
 	return nil
 }
->>>>>>> origin/dev-borr

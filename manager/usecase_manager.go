@@ -8,26 +8,6 @@ import (
 
 type UsecaseManager interface {
 	GetUserUsecase() usecase.UserUseCase
-<<<<<<< HEAD
-	GetLoginUsecase() usecase.LoginUsecase
-}
-
-type usecaseManager struct {
-	repoManager  RepoManager
-	userUsecase  usecase.UserUseCase
-	loginUsecase usecase.LoginUsecase
-}
-
-var onceLoadLoginUsecase sync.Once
-var onceLoadUserUsecase sync.Once
-
-func (um *usecaseManager) GetLoginUsecase() usecase.LoginUsecase {
-	onceLoadLoginUsecase.Do(func() {
-		um.loginUsecase = usecase.NewLoginUsecase(um.repoManager.GetUserRepo())
-	})
-	return um.loginUsecase
-}
-=======
 	GetLoginUsecase() usecase.LoginUseCase
 	GetDailyExpenditureUsecase() usecase.DailyExpenditureUseCase
 }
@@ -35,15 +15,14 @@ func (um *usecaseManager) GetLoginUsecase() usecase.LoginUsecase {
 type usecaseManager struct {
 	repoManager RepoManager
 
-	userUsecase    usecase.UserUseCase
-	loginUsecase	usecase.LoginUseCase
+	userUsecase             usecase.UserUseCase
+	loginUsecase            usecase.LoginUseCase
 	dailyExpenditureUsecase usecase.DailyExpenditureUseCase
 }
 
 var onceLoadUserUsecase sync.Once
 var onceLoadLoginUsecase sync.Once
 var onceLoadDailyExpenditureUsecase sync.Once
->>>>>>> origin/dev-borr
 
 func (um *usecaseManager) GetUserUsecase() usecase.UserUseCase {
 	onceLoadUserUsecase.Do(func() {
@@ -51,8 +30,6 @@ func (um *usecaseManager) GetUserUsecase() usecase.UserUseCase {
 	})
 	return um.userUsecase
 }
-<<<<<<< HEAD
-=======
 func (um *usecaseManager) GetLoginUsecase() usecase.LoginUseCase {
 	onceLoadLoginUsecase.Do(func() {
 		um.loginUsecase = usecase.NewLoginUseCase(um.repoManager.GetUserRepo())
@@ -66,7 +43,6 @@ func (um *usecaseManager) GetDailyExpenditureUsecase() usecase.DailyExpenditureU
 	})
 	return um.dailyExpenditureUsecase
 }
->>>>>>> origin/dev-borr
 
 func NewUsecaseManager(repoManager RepoManager) UsecaseManager {
 	return &usecaseManager{
