@@ -3,39 +3,39 @@ package usecase
 import (
 	"fmt"
 
-	"enigmacamp.com/final-project/team-4/track-prosto/apperror"
-	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/repository"
+	"enigmacamp.com/final-project/team-4/track-prosto/utils/authutil"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginUsecase interface {
+	Login(string, string) (string, error)
 }
 
 type loginUsecaseImpl struct {
 	userRepo repository.UserRepository
 }
 
-func (lu *loginUsecaseImpl) IsNameOrPassExist(name string, pass string) (*model.UserModel, error) {
-	usr, err := lu.userRepo.GetUserByName(name)
+func (uc *loginUsecaseImpl) Login(username, password string) (string, error) {
+	// Mengecek apakah pengguna dengan username tersebut ada di penyimpanan data
+	user, err := uc.userRepo.GetUserByName(username)
 	if err != nil {
-		return nil, fmt.Errorf("usrUsecase.usrRepo.GetUserByName() : %w", err)
+		return "", fmt.Errorf("failed to retrieve user: %v", err)
 	}
-	if usr == nil {
-		return nil, apperror.AppError{
-			ErrorCode:    400,
-			ErrorMassage: fmt.Sprintf("user data with name : %s not found", name),
-		}
-	}
-	err = bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(pass))
-	if err != nil {
-		return nil, apperror.AppError{
-			ErrorCode:    400,
-			ErrorMassage: "password that you entered is incorrect.",
-		}
-	}
-	return usr, nil
 
+	// Verifikasi password pengguna dengan menggunakan bcrypt
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		return "", fmt.Errorf("invalid username or password")
+	}
+
+	// Menghasilkan token JWT
+	token, err := authutil.GenerateJWTToken(user.ID, user.Username, user.Role)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate token: %v", err)
+	}
+
+	return token, nil
 }
 
 func NewLoginUsecase(userRepo repository.UserRepository) LoginUsecase {

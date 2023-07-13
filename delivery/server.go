@@ -3,36 +3,34 @@ package delivery
 import (
 	"enigmacamp.com/final-project/team-4/track-prosto/config"
 	"enigmacamp.com/final-project/team-4/track-prosto/delivery/controller"
-	"enigmacamp.com/final-project/team-4/track-prosto/delivery/middleware"
 	"enigmacamp.com/final-project/team-4/track-prosto/manager"
 	"github.com/gin-gonic/gin"
 )
 
-type Server interface {
-	Run()
-}
-type server struct {
-	usecaseManager manager.UsecaseManager
-	srv            *gin.Engine
+type Server struct {
+	useCaseManager manager.UsecaseManager
+	engine         *gin.Engine
 }
 
-func (s *server) Run() {
-	s.srv.Use(middleware.LoggerMiddleware())
-	controller.NewUserController(s.srv, s.usecaseManager.GetUserUsecase())
-
-	s.srv.Run()
+func (s *Server) Run() {
+	s.initController()
+	err := s.engine.Run()
+	if err != nil {
+		panic(err)
+	}
 }
-
-func NewServer() Server {
-	infra := manager.NewInfraManager(config.NewConfig())
+func (s *Server) initController() {
+	controller.NewUserController(s.engine, s.useCaseManager.GetUserUsecase())
+	controller.NewLoginController(s.engine, s.useCaseManager.GetLoginUsecase())
+}
+func NewServer() *Server {
+	c, err := config.NewConfig()
+	if err != nil {
+		panic(err)
+	}
+	r := gin.Default()
+	infra := manager.NewInfraManager(c)
 	repo := manager.NewRepoManager(infra)
 	usecase := manager.NewUsecaseManager(repo)
-
-	srv := gin.Default()
-
-	return &server{
-		usecaseManager: usecase,
-		srv:            srv,
-	}
-
+	return &Server{useCaseManager: usecase, engine: r}
 }

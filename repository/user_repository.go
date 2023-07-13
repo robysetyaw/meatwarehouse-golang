@@ -55,7 +55,7 @@ func (ur *ursitoryImpl) DeleteUser(userID string) error {
 
 	_, err := ur.db.Exec(query, userID)
 	if err != nil {
-		log.Println("Error deleting user:", err)
+		log.Println("Error DeleteUser():", err)
 		return err
 	}
 
@@ -73,7 +73,7 @@ func (ur *ursitoryImpl) GetUserByID(userID string) (*model.UserModel, error) {
 		if err == sql.ErrNoRows {
 			return nil, nil // User not found
 		}
-		log.Println("Error GetUserByID:", err)
+		log.Println("Error GetUserByID():", err)
 		return nil, err
 	}
 
@@ -91,7 +91,7 @@ func (ur *ursitoryImpl) GetUserByName(userName string) (*model.UserModel, error)
 		if err == sql.ErrNoRows {
 			return nil, nil // User not found
 		}
-		log.Println("Error GetUserByName:", err)
+		log.Println("Error GetUserByName():", err)
 		return nil, err
 	}
 
@@ -103,7 +103,7 @@ func (ur *ursitoryImpl) GetAllUsers() ([]*model.UserModel, error) {
 
 	rows, err := ur.db.Query(query)
 	if err != nil {
-		log.Println("Error retrieving users:", err)
+		log.Println("Error GetAllUsers():", err)
 		return nil, err
 	}
 	defer rows.Close()

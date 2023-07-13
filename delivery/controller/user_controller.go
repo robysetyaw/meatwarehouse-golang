@@ -41,6 +41,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		})
 		return
 	}
+	fmt.Println(usr)
 	err = uc.userUseCase.CreateUser(usr)
 	if err != nil {
 		appError := apperror.AppError{}
@@ -54,7 +55,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 			fmt.Printf("usrHandler.usrUsecase() 2 : %v ", err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success":      false,
-				"errorMessage": "Terjadi kesalahan ketika menyimpan data user",
+				"errorMessage": "error when insert data user",
 			})
 		}
 		return
@@ -62,6 +63,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
+		"message": "Success insert data user",
 	})
 }
 

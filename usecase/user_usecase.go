@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	// "enigmacamp.com/final-project/team-4/track-prosto/apperror"
+	"enigmacamp.com/final-project/team-4/track-prosto/apperror"
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/repository"
 	"golang.org/x/crypto/bcrypt"
@@ -24,24 +24,24 @@ func NewUserUseCase(userRepository repository.UserRepository) UserUseCase {
 }
 
 func (uc *userUseCaseImpl) CreateUser(user *model.UserModel) error {
-	// isNameExist, err := uc.userRepository.GetUserByName(user.Username)
-	// if err != nil {
-	// 	return fmt.Errorf("userUseCaseImplImpl.InsertService() : %w", err)
-	// }
+	isNameExist, err := uc.userRepository.GetUserByName(user.Username)
+	if err != nil {
+		return fmt.Errorf("userUseCaseImplImpl.CreateUser() : %w", err)
+	}
 
-	// if isNameExist != nil {
-	// 	return apperror.AppError{
-	// 		ErrorCode:    400,
-	// 		ErrorMassage: fmt.Sprintf("data with username : %v is exist", user.Username),
-	// 	}
-	// }
+	if isNameExist != nil {
+		return apperror.AppError{
+			ErrorCode:    400,
+			ErrorMassage: fmt.Sprintf("data with username : %v is exist", user.Username),
+		}
+	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf(" bcrypt.GenerateFromPassword() : %w", err)
 	}
 	user.Password = string(hashedPassword)
 	user.CreatedAt = time.Now()
-	user.UpdatedAt = time.Now()
+	fmt.Println(user)
 	return uc.userRepository.CreateUser(user)
 }
 
