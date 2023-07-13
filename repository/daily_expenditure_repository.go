@@ -2,114 +2,151 @@ package repository
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
+	"time"
 
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 )
 
-type DailyExpenditureRepository struct {
+type DailyExpenditureRepository interface {
+	CreateDailyExpenditure(expenditure *model.DailyExpenditure) error
+	UpdateDailyExpenditure(expenditure *model.DailyExpenditure) error
+	GetDailyExpenditureByID(id string) (*model.DailyExpenditure, error)
+	GetAllDailyExpenditures() ([]*model.DailyExpenditure, error)
+	DeleteDailyExpenditure(id string) error
+	GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error)
+}
+
+type dailyExpenditureRepository struct {
 	db *sql.DB
 }
 
-func NewDailyExpenditureRepository(db *sql.DB) *DailyExpenditureRepository {
-	return &DailyExpenditureRepository{db: db}
+func NewDailyExpenditureRepository(db *sql.DB) DailyExpenditureRepository {
+	return &dailyExpenditureRepository{
+		db: db,
+	}
 }
 
-func (repo *DailyExpenditureRepository) CreateDailyExpenditure(dailyExpenditure *model.DailyExpenditure) error {
-	query := `
+func (repo *dailyExpenditureRepository) GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error) {
+    var total float64
+    err := repo.db.QueryRow(`
+        SELECT SUM(amount) FROM daily_expenditures
+        WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2
+    `, startDate, endDate).Scan(&total)
+    if err != nil {
+        return 0, fmt.Errorf("failed to get total expenditure: %w", err)
+    }
+	fmt.Print(startDate)
+    return total, nil
+}
+
+
+func (repo *dailyExpenditureRepository) CreateDailyExpenditure(expenditure *model.DailyExpenditure) error {
+	now := time.Now()
+	expenditure.CreatedAt = now
+	expenditure.UpdatedAt = now
+
+	// Perform database insert operation
+	_, err := repo.db.Exec(`
 		INSERT INTO daily_expenditures (id, user_id, amount, description, is_active, created_at, updated_at, created_by, updated_by)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-	`
-
-	_, err := repo.db.Exec(query, dailyExpenditure.ID, dailyExpenditure.UserID, dailyExpenditure.Amount, dailyExpenditure.Description, dailyExpenditure.IsActive, dailyExpenditure.CreatedAt, dailyExpenditure.UpdatedAt, dailyExpenditure.CreatedBy, dailyExpenditure.UpdatedBy)
+	`, expenditure.ID, expenditure.UserID, expenditure.Amount, expenditure.Description, expenditure.IsActive,  expenditure.CreatedAt, expenditure.UpdatedAt, expenditure.CreatedBy, expenditure.CreatedBy)
 	if err != nil {
-		log.Println("Error creating daily expenditure:", err)
-		return err
+		return fmt.Errorf("failed to create daily expenditure: %w", err)
 	}
 
 	return nil
 }
 
-func (repo *DailyExpenditureRepository) UpdateDailyExpenditure(dailyExpenditure *model.DailyExpenditure) error {
-	query := `
+func (repo *dailyExpenditureRepository) UpdateDailyExpenditure(expenditure *model.DailyExpenditure) error {
+	// Set updated_at timestamp
+	expenditure.UpdatedAt = time.Now()
+
+	// Perform database update operation
+	_, err := repo.db.Exec(`
 		UPDATE daily_expenditures
-		SET user_id = $2, amount = $3, description = $4, is_active = $5, updated_at = $6, updated_by = $7
-		WHERE id = $1
-	`
-
-	_, err := repo.db.Exec(query, dailyExpenditure.ID, dailyExpenditure.UserID, dailyExpenditure.Amount, dailyExpenditure.Description, dailyExpenditure.IsActive, dailyExpenditure.UpdatedAt, dailyExpenditure.UpdatedBy)
+		SET amount = $1, description = $2, is_active = $3,  updated_at = $5, updated_by = $6
+		WHERE id = $7
+	`, expenditure.Amount, expenditure.Description, expenditure.IsActive, expenditure.UpdatedAt, expenditure.UpdatedBy, expenditure.ID)
 	if err != nil {
-		log.Println("Error updating daily expenditure:", err)
-		return err
+		return fmt.Errorf("failed to update daily expenditure: %w", err)
 	}
 
 	return nil
 }
 
-func (repo *DailyExpenditureRepository) DeleteDailyExpenditure(dailyExpenditureID string) error {
-	query := `
-		DELETE FROM daily_expenditures WHERE id = $1
-	`
+func (repo *dailyExpenditureRepository) GetDailyExpenditureByID(id string) (*model.DailyExpenditure, error) {
+	var expenditure model.DailyExpenditure
 
-	_, err := repo.db.Exec(query, dailyExpenditureID)
-	if err != nil {
-		log.Println("Error deleting daily expenditure:", err)
-		return err
-	}
-
-	return nil
-}
-
-func (repo *DailyExpenditureRepository) GetDailyExpenditureByID(dailyExpenditureID string) (*model.DailyExpenditure, error) {
-	query := `
-		SELECT id, user_id, amount, description, is_active, created_at, updated_at, created_by, updated_by
+	// Perform database query to retrieve the daily expenditure by ID
+	err := repo.db.QueryRow(`
+		SELECT id, user_id, amount, description, is_active, role, created_at, updated_at, created_by, updated_by
 		FROM daily_expenditures
 		WHERE id = $1
-	`
-
-	row := repo.db.QueryRow(query, dailyExpenditureID)
-
-	dailyExpenditure := &model.DailyExpenditure{}
-	err := row.Scan(&dailyExpenditure.ID, &dailyExpenditure.UserID, &dailyExpenditure.Amount, &dailyExpenditure.Description, &dailyExpenditure.IsActive, &dailyExpenditure.CreatedAt, &dailyExpenditure.UpdatedAt, &dailyExpenditure.CreatedBy, &dailyExpenditure.UpdatedBy)
+	`, id).Scan(
+		&expenditure.ID,
+		&expenditure.UserID,
+		&expenditure.Amount,
+		&expenditure.Description,
+		&expenditure.IsActive,
+		&expenditure.CreatedAt,
+		&expenditure.UpdatedAt,
+		&expenditure.CreatedBy,
+		&expenditure.UpdatedBy,
+	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil // DailyExpenditure not found
+			return nil, nil // Daily expenditure not found
 		}
-		log.Println("Error retrieving daily expenditure:", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get daily expenditure by ID: %w", err)
 	}
 
-	return dailyExpenditure, nil
+	return &expenditure, nil
 }
 
-func (repo *DailyExpenditureRepository) GetAllDailyExpenditures() ([]*model.DailyExpenditure, error) {
-	query := `
+func (repo *dailyExpenditureRepository) GetAllDailyExpenditures() ([]*model.DailyExpenditure, error) {
+	// Perform database query to retrieve all daily expenditures
+	rows, err := repo.db.Query(`
 		SELECT id, user_id, amount, description, is_active, created_at, updated_at, created_by, updated_by
 		FROM daily_expenditures
-	`
-
-	rows, err := repo.db.Query(query)
+	`)
 	if err != nil {
-		log.Println("Error retrieving daily expenditures:", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get all daily expenditures: %w", err)
 	}
 	defer rows.Close()
 
-	dailyExpenditures := []*model.DailyExpenditure{}
+	// Iterate over the rows and scan the results into DailyExpenditure objects
+	expenditures := make([]*model.DailyExpenditure, 0)
 	for rows.Next() {
-		dailyExpenditure := &model.DailyExpenditure{}
-		err := rows.Scan(&dailyExpenditure.ID, &dailyExpenditure.UserID, &dailyExpenditure.Amount, &dailyExpenditure.Description, &dailyExpenditure.IsActive, &dailyExpenditure.CreatedAt, &dailyExpenditure.UpdatedAt, &dailyExpenditure.CreatedBy, &dailyExpenditure.UpdatedBy)
+		var expenditure model.DailyExpenditure
+		err := rows.Scan(
+			&expenditure.ID,
+			&expenditure.UserID,
+			&expenditure.Amount,
+			&expenditure.Description,
+			&expenditure.IsActive,
+			&expenditure.CreatedAt,
+			&expenditure.UpdatedAt,
+			&expenditure.CreatedBy,
+			&expenditure.UpdatedBy,
+		)
 		if err != nil {
-			log.Println("Error scanning daily expenditure row:", err)
-			continue
+			return nil, fmt.Errorf("failed to scan daily expenditure row: %w", err)
 		}
-		dailyExpenditures = append(dailyExpenditures, dailyExpenditure)
+		expenditures = append(expenditures, &expenditure)
 	}
 
-	if err := rows.Err(); err != nil {
-		log.Println("Error iterating over daily expenditure rows:", err)
-		return nil, err
+	return expenditures, nil
+}
+
+func (repo *dailyExpenditureRepository) DeleteDailyExpenditure(id string) error {
+	// Perform database delete operation
+	_, err := repo.db.Exec(`
+		DELETE FROM daily_expenditures WHERE id = $1
+	`, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete daily expenditure: %w", err)
 	}
 
-	return dailyExpenditures, nil
+	return nil
 }

@@ -4,93 +4,123 @@ import (
 	"fmt"
 	"time"
 
-	"enigmacamp.com/final-project/team-4/track-prosto/apperror"
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/repository"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type UserUseCase interface {
-	CreateUser(*model.User) error
+	CreateUser(user *model.User) error
+	UpdateUser(user *model.User) error
+	GetUserByID(id string) (*model.User, error)
+	GetAllUsers() ([]*model.User, error)
+	DeleteUser(id string) error
+	GetUserByUsername(username string) (*model.User, error)
 }
-type userUseCaseImpl struct {
+
+type userUseCase struct {
 	userRepository repository.UserRepository
 }
 
-func NewUserUseCase(userRepository repository.UserRepository) UserUseCase {
-	return &userUseCaseImpl{
-		userRepository: userRepository,
+func NewUserUseCase(userRepo repository.UserRepository) UserUseCase {
+	return &userUseCase{
+		userRepository: userRepo,
 	}
 }
 
-func (uc *userUseCaseImpl) CreateUser(user *model.User) error {
-	isNameExist, err := uc.userRepository.GetUserByName(user.Username)
+func (uc *userUseCase) CreateUser(user *model.User) error {
+	// Implement any business logic or validation before creating the user
+	// You can also perform data manipulation or enrichment if needed
+
+	existingUser, err := uc.userRepository.GetByUsername(user.Username)
 	if err != nil {
-		return fmt.Errorf("userUseCaseImplImpl.CreateUser() : %w", err)
+		return fmt.Errorf("failed to check username existence: %v", err)
+	}
+	if existingUser != nil {
+		return fmt.Errorf("username already exists")
 	}
 
-	if isNameExist != nil {
-		return apperror.AppError{
-			ErrorCode:    400,
-			ErrorMassage: fmt.Sprintf("data with username : %v is exist", user.Username),
-		}
-	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf(" bcrypt.GenerateFromPassword() : %w", err)
-	}
-	user.Password = string(hashedPassword)
+	user.IsActive = true
 	user.CreatedAt = time.Now()
-	fmt.Println(user)
-	return uc.userRepository.CreateUser(user)
+	user.CreatedBy = "admin"
+
+	err = uc.userRepository.CreateUser(user)
+	if err != nil {
+		// Handle any repository errors or perform error logging
+		return err
+	}
+
+	return nil
 }
 
-// func (uc *userUseCaseImpl) UpdateUser(user *model.User) error {
-// 	// Lakukan validasi atau logika bisnis lainnya sebelum mengupdate pengguna di dalam repository
-// 	// ...
+func (uc *userUseCase) UpdateUser(user *model.User) error {
+	// Implement any business logic or validation before updating the user
+	// You can also perform data manipulation or enrichment if needed
+	existingUser, err := uc.userRepository.GetByUsername(user.Username)
+	if err != nil {
+		return fmt.Errorf("failed to check username existence: %v", err)
+	}
+	if existingUser != nil {
+		return fmt.Errorf("username already exists")
+	}
+	err = uc.userRepository.UpdateUser(user)
+	if err != nil {
+		// Handle any repository errors or perform error logging
+		return err
+	}
 
-// 	err := uc.userRepository.UpdateUser(user)
-// 	if err != nil {
-// 		// Tangani kesalahan jika terjadi kesalahan saat mengupdate pengguna
-// 		// ...
-// 		return err
-// 	}
+	return nil
+}
 
-// 	return nil
-// }
+func (uc *userUseCase) GetUserByID(id string) (*model.User, error) {
+	user, err := uc.userRepository.GetUserByID(id)
+	if err != nil {
+		// Handle any repository errors or perform error logging
+		return nil, err
+	}
 
-// func (uc *userUseCaseImpl) DeleteUser(userID string) error {
-// 	// Lakukan validasi atau logika bisnis lainnya sebelum menghapus pengguna di dalam repository
-// 	// ...
+	// Perform any additional data processing or transformation if needed
 
-// 	err := uc.userRepository.DeleteUser(userID)
-// 	if err != nil {
-// 		// Tangani kesalahan jika terjadi kesalahan saat menghapus pengguna
-// 		// ...
-// 		return err
-// 	}
+	return user, nil
+}
 
-// 	return nil
-// }
+func (uc *userUseCase) GetUserByUsername(username string) (*model.User, error) {
+	user, err := uc.userRepository.GetByUsername(username)
+	if err != nil {
+		// Handle any repository errors or perform error logging
+		return nil, err
+	}
 
-// func (uc *userUseCaseImpl) GetUserByID(userID string) (*model.User, error) {
-// 	user, err := uc.userRepository.GetUserByID(userID)
-// 	if err != nil {
-// 		// Tangani kesalahan jika terjadi kesalahan saat mengambil pengguna berdasarkan ID
-// 		// ...
-// 		return nil, err
-// 	}
+	// Perform any additional data processing or transformation if needed
 
-// 	return user, nil
-// }
+	return user, nil
+}
 
-// func (uc *userUseCaseImpl) GetAllUsers() ([]*model.User, error) {
-// 	users, err := uc.userRepository.GetAllUsers()
-// 	if err != nil {
-// 		// Tangani kesalahan jika terjadi kesalahan saat mengambil daftar pengguna
-// 		// ...
-// 		return nil, err
-// 	}
+func (uc *userUseCase) GetAllUsers() ([]*model.User, error) {
+	users, err := uc.userRepository.GetAllUsers()
+	if err != nil {
+		// Handle any repository errors or perform error logging
+		return nil, err
+	}
 
-// 	return users, nil
-// }
+	// Perform any additional data processing or transformation if needed
+
+	return users, nil
+}
+
+func (uc *userUseCase) DeleteUser(user string) error {
+	// Implement any business logic or validation before deleting the user
+	existingUser, err := uc.userRepository.GetByUsername(user)
+	if err != nil {
+		return fmt.Errorf("failed to check username existence: %v", err)
+	}
+	if existingUser != nil {
+		return fmt.Errorf("username already exists")
+	}
+	err = uc.userRepository.DeleteUser(user)
+	if err != nil {
+		// Handle any repository errors or perform error logging
+		return err
+	}
+
+	return nil
+}

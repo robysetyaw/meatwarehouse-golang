@@ -2,108 +2,118 @@ package repository
 
 import (
 	"database/sql"
-	"log"
+	"errors"
+	"fmt"
+
+	"time"
 
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
-	"enigmacamp.com/final-project/team-4/track-prosto/utils"
 )
 
 type UserRepository interface {
-	CreateUser(*model.User) error
-	UpdateUser(*model.User) error
-	DeleteUser(string) error
-	GetUserByID(string) (*model.User, error)
+	CreateUser(user *model.User) error
+	UpdateUser(user *model.User) error
+	GetUserByID(id string) (*model.User, error)
 	GetAllUsers() ([]*model.User, error)
-	GetUserByName(string) (*model.User, error)
+	DeleteUser(id string) error
+	GetByUsername(username string) (*model.User, error)
 }
-type ursitoryImpl struct {
+
+type userRepository struct {
 	db *sql.DB
 }
 
 func NewUserRepository(db *sql.DB) UserRepository {
-	return &ursitoryImpl{
-		db: db,
-	}
+	return &userRepository{db: db}
 }
 
-func (ur *ursitoryImpl) CreateUser(user *model.User) error {
-	query := utils.INSERT_USER
+func (r *userRepository) CreateUser(user *model.User) error {
+	query := `
+		INSERT INTO users (id, username, password, is_active, role, created_at, updated_at, created_by, updated_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`
 
-	_, err := ur.db.Exec(query, user.ID, user.Username, user.Password, user.IsActive, user.Role, user.CreatedAt, user.UpdatedAt, user.CreatedBy, user.UpdatedBy)
+	_, err := r.db.Exec(query, user.ID, user.Username, user.Password, user.IsActive, user.Role, user.CreatedAt, user.CreatedAt, user.CreatedBy, user.CreatedBy)
 	if err != nil {
-		log.Println("Error CreateUser():", err)
 		return err
 	}
 
 	return nil
 }
 
-func (ur *ursitoryImpl) UpdateUser(user *model.User) error {
-	query := utils.UPDATE_USER
+func (r *userRepository) UpdateUser(user *model.User) error {
+	query := `
+		UPDATE users
+		SET username = $1, password = $2, is_active = $3, role = $4, updated_at = $5, updated_by = $6
+		WHERE id = $7
+	`
 
-	_, err := ur.db.Exec(query, user.ID, user.Username, user.Password, user.IsActive, user.Role, user.UpdatedAt, user.UpdatedBy)
+	updatedAt := time.Now()
+
+	_, err := r.db.Exec(query, user.Username, user.Password, user.IsActive, user.Role, updatedAt, user.UpdatedBy, user.ID)
 	if err != nil {
-		log.Println("Error UpdateUser():", err)
 		return err
 	}
 
 	return nil
 }
 
-func (ur *ursitoryImpl) DeleteUser(userID string) error {
-	query := utils.DELETE_USER
+func (r *userRepository) GetUserByID(id string) (*model.User, error) {
+	query := `
+		SELECT id, username, password, is_active, role, created_at, updated_at, created_by, updated_by
+		FROM users
+		WHERE id = $1
+	`
 
-	_, err := ur.db.Exec(query, userID)
-	if err != nil {
-		log.Println("Error DeleteUser():", err)
-		return err
-	}
-
-	return nil
-}
-
-func (ur *ursitoryImpl) GetUserByID(userID string) (*model.User, error) {
-	query := utils.GET_USER_BY_ID
-
-	row := ur.db.QueryRow(query, userID)
+	row := r.db.QueryRow(query, id)
 
 	user := &model.User{}
-	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.IsActive, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.CreatedBy, &user.UpdatedBy)
+	err := row.Scan(
+		&user.ID,
+		&user.Username,
+		&user.Password,
+		&user.IsActive,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&user.CreatedBy,
+		&user.UpdatedBy,
+	)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil // User not found
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil // Return nil if no user found
 		}
-		log.Println("Error GetUserByID():", err)
 		return nil, err
 	}
 
 	return user, nil
 }
 
-func (ur *ursitoryImpl) GetUserByName(userName string) (*model.User, error) {
-	query := utils.GET_USER_BY_NAME
-
-	row := ur.db.QueryRow(query, userName)
-
+func (r *userRepository) GetByUsername(username string) (*model.User, error) {
+	query := `
+		SELECT id, username, password, is_active, role, created_at, updated_at, created_by, updated_by
+		FROM users
+		WHERE username = $1 AND is_active = true
+	`
 	user := &model.User{}
-	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.IsActive, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.CreatedBy, &user.UpdatedBy)
+	err := r.db.QueryRow(query, username).Scan(&user.ID, &user.Username, &user.Password, &user.IsActive, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.CreatedBy, &user.UpdatedBy)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil // User not found
 		}
-		log.Println("Error GetUserByName():", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get user by username: %v", err)
 	}
-
 	return user, nil
 }
 
-func (ur *ursitoryImpl) GetAllUsers() ([]*model.User, error) {
-	query := utils.GET_ALL_USER
+func (r *userRepository) GetAllUsers() ([]*model.User, error) {
+	query := `
+		SELECT id, username, password, is_active, role, created_at, updated_at, created_by, updated_by
+		FROM users
+	`
 
-	rows, err := ur.db.Query(query)
+	rows, err := r.db.Query(query)
 	if err != nil {
-		log.Println("Error GetAllUsers():", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -111,18 +121,37 @@ func (ur *ursitoryImpl) GetAllUsers() ([]*model.User, error) {
 	users := []*model.User{}
 	for rows.Next() {
 		user := &model.User{}
-		err := rows.Scan(&user.ID, &user.Username, &user.Password, &user.IsActive, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.CreatedBy, &user.UpdatedBy)
+		err := rows.Scan(
+			&user.ID,
+			&user.Username,
+			&user.Password,
+			&user.IsActive,
+			&user.Role,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+			&user.CreatedBy,
+			&user.UpdatedBy,
+		)
 		if err != nil {
-			log.Println("Error scanning user row:", err)
-			continue
+			return nil, err
 		}
 		users = append(users, user)
 	}
 
-	if err := rows.Err(); err != nil {
-		log.Println("Error iterating over user rows:", err)
-		return nil, err
+	return users, nil
+}
+
+func (r *userRepository) DeleteUser(id string) error {
+	query := `
+	UPDATE users
+	SET is_active = false
+	WHERE id = $1
+	`
+
+	_, err := r.db.Exec(query, id)
+	if err != nil {
+		return err
 	}
 
-	return users, nil
+	return nil
 }

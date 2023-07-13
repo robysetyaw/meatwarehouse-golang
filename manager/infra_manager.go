@@ -10,7 +10,7 @@ import (
 )
 
 type InfraManager interface {
-	DbConn() *sql.DB
+	GetDB() *sql.DB
 }
 
 type infraManager struct {
@@ -21,9 +21,9 @@ type infraManager struct {
 var onceLoadDB sync.Once
 
 func (i *infraManager) initDb() {
-	psqlconn := fmt.Sprintf("user=%s host=%s password=%s dbname=%s sslmode=disable", i.cfg.User, i.cfg.Host, i.cfg.Password, i.cfg.Name)
+	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", i.cfg.Host, i.cfg.Port, i.cfg.User, i.cfg.Password, i.cfg.Name)
 	onceLoadDB.Do(func() {
-		db, err := sql.Open(i.cfg.Driver, psqlconn)
+		db, err := sql.Open("postgres", psqlconn)
 		if err != nil {
 			panic(err)
 		}
@@ -31,7 +31,7 @@ func (i *infraManager) initDb() {
 	})
 	fmt.Println("DB Connected")
 }
-func (i *infraManager) DbConn() *sql.DB {
+func (i *infraManager) GetDB() *sql.DB {
 	return i.db
 }
 
