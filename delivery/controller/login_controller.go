@@ -10,10 +10,10 @@ import (
 
 type LoginController struct {
 	// userUseCase  usecase.UserUseCase
-	loginUseCase usecase.LoginUsecase
+	loginUseCase usecase.LoginUseCase
 }
 
-func NewLoginController(r *gin.Engine, loginUC usecase.LoginUsecase) {
+func NewLoginController(r *gin.Engine, loginUC usecase.LoginUseCase) {
 	loginController := &LoginController{
 		// userUseCase:  userUC,
 		loginUseCase: loginUC,
