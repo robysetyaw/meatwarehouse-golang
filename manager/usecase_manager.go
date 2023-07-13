@@ -10,6 +10,7 @@ type UsecaseManager interface {
 	GetUserUsecase() usecase.UserUseCase
 	GetLoginUsecase() usecase.LoginUseCase
 	GetDailyExpenditureUsecase() usecase.DailyExpenditureUseCase
+	GetReportUsecase() usecase.ReportUseCase
 }
 
 type usecaseManager struct {
@@ -18,11 +19,13 @@ type usecaseManager struct {
 	userUsecase    usecase.UserUseCase
 	loginUsecase	usecase.LoginUseCase
 	dailyExpenditureUsecase usecase.DailyExpenditureUseCase
+	reportUsecase usecase.ReportUseCase
 }
 
 var onceLoadUserUsecase sync.Once
 var onceLoadLoginUsecase sync.Once
 var onceLoadDailyExpenditureUsecase sync.Once
+var onceLoadReportUsecase sync.Once
 
 func (um *usecaseManager) GetUserUsecase() usecase.UserUseCase {
 	onceLoadUserUsecase.Do(func() {
@@ -42,6 +45,13 @@ func (um *usecaseManager) GetDailyExpenditureUsecase() usecase.DailyExpenditureU
 		um.dailyExpenditureUsecase = usecase.NewDailyExpenditureUseCase(um.repoManager.GetDailyExpenditureRepo())
 	})
 	return um.dailyExpenditureUsecase
+}
+
+func (um *usecaseManager) GetReportUsecase() usecase.ReportUseCase {
+	onceLoadReportUsecase.Do(func() {
+		um.reportUsecase = usecase.NewReportUseCase(um.repoManager.GetDailyExpenditureRepo())
+	})
+	return um.reportUsecase
 }
 
 func NewUsecaseManager(repoManager RepoManager) UsecaseManager {

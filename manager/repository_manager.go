@@ -9,6 +9,7 @@ import (
 type RepoManager interface {
 	GetUserRepo() repository.UserRepository
 	GetDailyExpenditureRepo() repository.DailyExpenditureRepository
+	
 }
 
 type repoManager struct {

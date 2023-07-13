@@ -20,6 +20,7 @@ func (s *server) Run() {
 	controller.NewUserController(s.srv, s.usecaseManager.GetUserUsecase())
 	controller.NewLoginController(s.srv, s.usecaseManager.GetLoginUsecase())
 	controller.NewDailyExpenditureController(s.srv, s.usecaseManager.GetDailyExpenditureUsecase())
+	controller.NewReportController(s.srv, s.usecaseManager.GetReportUsecase())
 	s.srv.Run()
 }
 
