@@ -31,7 +31,7 @@ func NewUserController(srv *gin.Engine, userUseCase usecase.UserUseCase) *UserCo
 }
 
 func (uc *UserController) CreateUser(c *gin.Context) {
-	usr := &model.UserModel{}
+	usr := &model.User{}
 	usr.ID = utils.UuidGenerate()
 	err := c.ShouldBindJSON(&usr)
 	if err != nil {
@@ -72,7 +72,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 // 	id := c.Param("id")
 
 // 	// Mengambil data dari request
-// 	var request model.UserModel
+// 	var request model.User
 // 	if err := c.ShouldBindJSON(&request); err != nil {
 // 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 // 		return

@@ -11,7 +11,7 @@ import (
 )
 
 type UserUseCase interface {
-	CreateUser(*model.UserModel) error
+	CreateUser(*model.User) error
 }
 type userUseCaseImpl struct {
 	userRepository repository.UserRepository
@@ -23,7 +23,7 @@ func NewUserUseCase(userRepository repository.UserRepository) UserUseCase {
 	}
 }
 
-func (uc *userUseCaseImpl) CreateUser(user *model.UserModel) error {
+func (uc *userUseCaseImpl) CreateUser(user *model.User) error {
 	isNameExist, err := uc.userRepository.GetUserByName(user.Username)
 	if err != nil {
 		return fmt.Errorf("userUseCaseImplImpl.CreateUser() : %w", err)
@@ -45,7 +45,7 @@ func (uc *userUseCaseImpl) CreateUser(user *model.UserModel) error {
 	return uc.userRepository.CreateUser(user)
 }
 
-// func (uc *userUseCaseImpl) UpdateUser(user *model.UserModel) error {
+// func (uc *userUseCaseImpl) UpdateUser(user *model.User) error {
 // 	// Lakukan validasi atau logika bisnis lainnya sebelum mengupdate pengguna di dalam repository
 // 	// ...
 
@@ -73,7 +73,7 @@ func (uc *userUseCaseImpl) CreateUser(user *model.UserModel) error {
 // 	return nil
 // }
 
-// func (uc *userUseCaseImpl) GetUserByID(userID string) (*model.UserModel, error) {
+// func (uc *userUseCaseImpl) GetUserByID(userID string) (*model.User, error) {
 // 	user, err := uc.userRepository.GetUserByID(userID)
 // 	if err != nil {
 // 		// Tangani kesalahan jika terjadi kesalahan saat mengambil pengguna berdasarkan ID
@@ -84,7 +84,7 @@ func (uc *userUseCaseImpl) CreateUser(user *model.UserModel) error {
 // 	return user, nil
 // }
 
-// func (uc *userUseCaseImpl) GetAllUsers() ([]*model.UserModel, error) {
+// func (uc *userUseCaseImpl) GetAllUsers() ([]*model.User, error) {
 // 	users, err := uc.userRepository.GetAllUsers()
 // 	if err != nil {
 // 		// Tangani kesalahan jika terjadi kesalahan saat mengambil daftar pengguna

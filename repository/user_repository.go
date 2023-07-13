@@ -9,12 +9,12 @@ import (
 )
 
 type UserRepository interface {
-	CreateUser(*model.UserModel) error
-	UpdateUser(*model.UserModel) error
+	CreateUser(*model.User) error
+	UpdateUser(*model.User) error
 	DeleteUser(string) error
-	GetUserByID(string) (*model.UserModel, error)
-	GetAllUsers() ([]*model.UserModel, error)
-	GetUserByName(string) (*model.UserModel, error)
+	GetUserByID(string) (*model.User, error)
+	GetAllUsers() ([]*model.User, error)
+	GetUserByName(string) (*model.User, error)
 }
 type ursitoryImpl struct {
 	db *sql.DB
@@ -26,7 +26,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	}
 }
 
-func (ur *ursitoryImpl) CreateUser(user *model.UserModel) error {
+func (ur *ursitoryImpl) CreateUser(user *model.User) error {
 	query := utils.INSERT_USER
 
 	_, err := ur.db.Exec(query, user.ID, user.Username, user.Password, user.IsActive, user.Role, user.CreatedAt, user.UpdatedAt, user.CreatedBy, user.UpdatedBy)
@@ -38,7 +38,7 @@ func (ur *ursitoryImpl) CreateUser(user *model.UserModel) error {
 	return nil
 }
 
-func (ur *ursitoryImpl) UpdateUser(user *model.UserModel) error {
+func (ur *ursitoryImpl) UpdateUser(user *model.User) error {
 	query := utils.UPDATE_USER
 
 	_, err := ur.db.Exec(query, user.ID, user.Username, user.Password, user.IsActive, user.Role, user.UpdatedAt, user.UpdatedBy)
@@ -62,12 +62,12 @@ func (ur *ursitoryImpl) DeleteUser(userID string) error {
 	return nil
 }
 
-func (ur *ursitoryImpl) GetUserByID(userID string) (*model.UserModel, error) {
+func (ur *ursitoryImpl) GetUserByID(userID string) (*model.User, error) {
 	query := utils.GET_USER_BY_ID
 
 	row := ur.db.QueryRow(query, userID)
 
-	user := &model.UserModel{}
+	user := &model.User{}
 	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.IsActive, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.CreatedBy, &user.UpdatedBy)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -80,12 +80,12 @@ func (ur *ursitoryImpl) GetUserByID(userID string) (*model.UserModel, error) {
 	return user, nil
 }
 
-func (ur *ursitoryImpl) GetUserByName(userName string) (*model.UserModel, error) {
+func (ur *ursitoryImpl) GetUserByName(userName string) (*model.User, error) {
 	query := utils.GET_USER_BY_NAME
 
 	row := ur.db.QueryRow(query, userName)
 
-	user := &model.UserModel{}
+	user := &model.User{}
 	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.IsActive, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.CreatedBy, &user.UpdatedBy)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -98,7 +98,7 @@ func (ur *ursitoryImpl) GetUserByName(userName string) (*model.UserModel, error)
 	return user, nil
 }
 
-func (ur *ursitoryImpl) GetAllUsers() ([]*model.UserModel, error) {
+func (ur *ursitoryImpl) GetAllUsers() ([]*model.User, error) {
 	query := utils.GET_ALL_USER
 
 	rows, err := ur.db.Query(query)
@@ -108,9 +108,9 @@ func (ur *ursitoryImpl) GetAllUsers() ([]*model.UserModel, error) {
 	}
 	defer rows.Close()
 
-	users := []*model.UserModel{}
+	users := []*model.User{}
 	for rows.Next() {
-		user := &model.UserModel{}
+		user := &model.User{}
 		err := rows.Scan(&user.ID, &user.Username, &user.Password, &user.IsActive, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.CreatedBy, &user.UpdatedBy)
 		if err != nil {
 			log.Println("Error scanning user row:", err)

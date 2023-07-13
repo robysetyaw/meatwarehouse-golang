@@ -21,7 +21,7 @@ func TestUserRepository_CreateUser_Success(t *testing.T) {
 	repo := NewUserRepository(db)
 
 	// Mock data
-	user := &model.UserModel{
+	user := &model.User{
 		ID:        "1",
 		Username:  "john_doe",
 		Password:  "password",
@@ -56,7 +56,7 @@ func TestUserRepository_CreateUser_Failure(t *testing.T) {
 	repo := NewUserRepository(db)
 
 	// Mock data
-	user := &model.UserModel{
+	user := &model.User{
 		ID:        "1",
 		Username:  "john_doe",
 		Password:  "password",
@@ -140,7 +140,7 @@ func TestUserRepository_UpdateUser_Success(t *testing.T) {
 	repo := NewUserRepository(db)
 
 	// Mock data
-	user := &model.UserModel{
+	user := &model.User{
 		ID:        "1",
 		Username:  "john_doe",
 		Password:  "password",
@@ -175,7 +175,7 @@ func TestUserRepository_UpdateUser_Error(t *testing.T) {
 	repo := NewUserRepository(db)
 
 	// Mock data
-	user := &model.UserModel{
+	user := &model.User{
 		ID:        "1",
 		Username:  "john_doe",
 		Password:  "password",
