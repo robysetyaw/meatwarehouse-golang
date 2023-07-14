@@ -13,6 +13,7 @@ type ReportUseCase interface {
 
 type reportUseCase struct {
 	dailyExpenditureRepo repository.DailyExpenditureRepository
+	userUseCase
 }
 
 func NewReportUseCase(dailyExpenditureRepo repository.DailyExpenditureRepository) ReportUseCase {
@@ -36,8 +37,25 @@ func (uc *reportUseCase) GenerateExpenditureReport(startDate time.Time, endDate 
 		StartDate:        startDate,
 		EndDate:          endDate,
 		TotalExpenditure: total,
-		Expenditures:     expenditures,
+		Expenditures:     []*model.DailyExpenditureReport{},
+	}
+
+	for _, expenditure := range expenditures {
+		dailyReport := &model.DailyExpenditureReport{
+			ID:          expenditure.ID,
+			UserID:      expenditure.UserID,
+			Username:    expenditure.Username,
+			Amount:      expenditure.Amount,
+			Description: expenditure.Description,
+			CreatedAt:   expenditure.CreatedAt,
+			UpdatedAt:   expenditure.UpdatedAt,
+			Date:        expenditure.Date,
+		}
+
+		report.Expenditures = append(report.Expenditures, dailyReport)
 	}
 
 	return report, nil
 }
+
+

@@ -15,7 +15,7 @@ type DailyExpenditureRepository interface {
 	GetAllDailyExpenditures() ([]*model.DailyExpenditure, error)
 	DeleteDailyExpenditure(id string) error
 	GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error)
-	GetExpendituresByDateRange(startDate time.Time, endDate time.Time) ([]*model.DailyExpenditure, error)
+	GetExpendituresByDateRange(startDate time.Time, endDate time.Time) ([]*model.DailyExpenditureReport, error)
 }	
 
 type dailyExpenditureRepository struct {
@@ -37,7 +37,7 @@ func (repo *dailyExpenditureRepository) GetTotalExpenditureByDateRange(startDate
     if err != nil {
         return 0, fmt.Errorf("failed to get total expenditure: %w", err)
     }
-	fmt.Print(startDate)
+	// fmt.Print(startDate)
     return total, nil
 }
 
@@ -67,7 +67,7 @@ func (repo *dailyExpenditureRepository) UpdateDailyExpenditure(expenditure *mode
 	_, err := repo.db.Exec(`
 		UPDATE daily_expenditures
 		SET amount = $1, description = $2, is_active = $3,  updated_at = $5, updated_by = $6
-		WHERE id = $7
+		WHERE id = $7 AND is_active = true
 	`, expenditure.Amount, expenditure.Description, expenditure.IsActive, expenditure.UpdatedAt, expenditure.UpdatedBy, expenditure.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update daily expenditure: %w", err)
@@ -83,7 +83,7 @@ func (repo *dailyExpenditureRepository) GetDailyExpenditureByID(id string) (*mod
 	err := repo.db.QueryRow(`
 		SELECT id, user_id, amount, description, is_active, role, created_at, updated_at, created_by, updated_by
 		FROM daily_expenditures
-		WHERE id = $1
+		WHERE id = $1 AND is_active = true
 	`, id).Scan(
 		&expenditure.ID,
 		&expenditure.UserID,
@@ -109,8 +109,8 @@ func (repo *dailyExpenditureRepository) GetAllDailyExpenditures() ([]*model.Dail
 	// Perform database query to retrieve all daily expenditures
 	rows, err := repo.db.Query(`
 		SELECT id, user_id, amount, description, is_active, created_at, updated_at, created_by, updated_by
-		FROM daily_expenditures
-	`)
+		FROM daily_expenditures WHERE is_active = true
+	`) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all daily expenditures: %w", err)
 	}
@@ -143,7 +143,9 @@ func (repo *dailyExpenditureRepository) GetAllDailyExpenditures() ([]*model.Dail
 func (repo *dailyExpenditureRepository) DeleteDailyExpenditure(id string) error {
 	// Perform database delete operation
 	_, err := repo.db.Exec(`
-		DELETE FROM daily_expenditures WHERE id = $1
+	UPDATE users
+	SET is_active = false
+	WHERE id = $1
 	`, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete daily expenditure: %w", err)
@@ -152,41 +154,42 @@ func (repo *dailyExpenditureRepository) DeleteDailyExpenditure(id string) error 
 	return nil
 }
 
-func (repo *dailyExpenditureRepository) GetExpendituresByDateRange(startDate time.Time, endDate time.Time) ([]*model.DailyExpenditure, error) {
-    var expenditures []*model.DailyExpenditure
+func (repo *dailyExpenditureRepository) GetExpendituresByDateRange(startDate time.Time, endDate time.Time) ([]*model.DailyExpenditureReport, error) {
+	var expenditures []*model.DailyExpenditureReport
 
-    rows, err := repo.db.Query(`
-        SELECT id, user_id, amount, description, is_active, created_at, updated_at, created_by, updated_by
-        FROM daily_expenditures
-        WHERE date >= $1 AND date <= $2
-    `, startDate, endDate)
-    if err != nil {
-        return nil, fmt.Errorf("failed to get expenditures by date range: %w", err)
-    }
-    defer rows.Close()
+	rows, err := repo.db.Query(`
+		SELECT d.id, d.user_id, u.username, d.amount, d.description, d.created_at, d.updated_at, d.date
+		FROM daily_expenditures d
+		JOIN users u ON d.user_id = u.id
+		WHERE d.date >= $1 AND d.date <= $2 AND d.is_active = true
+	`, startDate, endDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get expenditures by date range: %w", err)
+	}
+	defer rows.Close()
 
-    for rows.Next() {
-        var expenditure model.DailyExpenditure
-        if err := rows.Scan(
-            &expenditure.ID,
-            &expenditure.UserID,
-            &expenditure.Amount,
-            &expenditure.Description,
-            &expenditure.IsActive,
-            &expenditure.CreatedAt,
-            &expenditure.UpdatedAt,
-            &expenditure.CreatedBy,
-            &expenditure.UpdatedBy,
-        ); err != nil {
-            return nil, fmt.Errorf("failed to scan expenditure row: %w", err)
-        }
+	for rows.Next() {
+		var expenditure model.DailyExpenditureReport
+		if err := rows.Scan(
+			&expenditure.ID,
+			&expenditure.UserID,
+			&expenditure.Username,
+			&expenditure.Amount,
+			&expenditure.Description,
+			&expenditure.CreatedAt,
+			&expenditure.UpdatedAt,
+			&expenditure.Date,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan expenditure row: %w", err)
+		}
 
-        expenditures = append(expenditures, &expenditure)
-    }
+		expenditures = append(expenditures, &expenditure)
+	}
 
-    if err := rows.Err(); err != nil {
-        return nil, fmt.Errorf("error occurred while iterating over expenditure rows: %w", err)
-    }
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred while iterating over expenditure rows: %w", err)
+	}
 
-    return expenditures, nil
+	return expenditures, nil
 }
+

@@ -26,7 +26,7 @@ func NewDailyExpenditureController(r *gin.Engine, deUC usecase.DailyExpenditureU
 	r.GET("/daily-expenditures/:id",middleware.JWTAuthMiddleware(), controller.GetDailyExpenditureByID)
 	r.GET("/daily-expenditures",middleware.JWTAuthMiddleware(), controller.GetAllDailyExpenditures)
 	r.DELETE("/daily-expenditures/:id",middleware.JWTAuthMiddleware(), controller.DeleteDailyExpenditure)
-	r.GET("/daily-expenditures/total", controller.GetTotalExpenditureByDateRange)
+	// r.GET("/daily-expenditures/total", controller.GetTotalExpenditureByDateRange)
 
 
 	return controller
@@ -110,6 +110,21 @@ func (dec *DailyExpenditureController) UpdateDailyExpenditure(c *gin.Context) {
 	}
 
 	expenditure.ID = expenditureID
+
+	token, err := utils.ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
+		return
+	}
+
+	claims, err := utils.VerifyJWTToken(token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	expenditure.UpdatedBy = claims["username"].(string)
+	expenditure.IsActive = true
 
 	if err := dec.dailyExpenditureUseCase.UpdateDailyExpenditure(&expenditure); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update daily expenditure"})

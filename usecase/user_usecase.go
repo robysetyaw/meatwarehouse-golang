@@ -116,7 +116,7 @@ func (uc *userUseCase) DeleteUser(username string) error {
 		return fmt.Errorf("failed to check username existence: %v", err)
 	}
 	if existingUser == nil {
-		return fmt.Errorf("User Not Found")
+		return fmt.Errorf("user Not Found")
 	}
 	err = uc.userRepository.DeleteUser(username)
 	if err != nil {
