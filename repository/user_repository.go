@@ -45,7 +45,7 @@ func (r *userRepository) UpdateUser(user *model.User) error {
 	query := `
 		UPDATE users
 		SET username = $1, password = $2, is_active = $3, role = $4, updated_at = $5, updated_by = $6
-		WHERE id = $7
+		WHERE id = $7 AND is_active = true
 	`
 
 	updatedAt := time.Now()
@@ -109,7 +109,7 @@ func (r *userRepository) GetByUsername(username string) (*model.User, error) {
 func (r *userRepository) GetAllUsers() ([]*model.User, error) {
 	query := `
 		SELECT id, username, password, is_active, role, created_at, updated_at, created_by, updated_by
-		FROM users
+		FROM users WHERE is_active = true
 	`
 
 	rows, err := r.db.Query(query)
@@ -141,14 +141,14 @@ func (r *userRepository) GetAllUsers() ([]*model.User, error) {
 	return users, nil
 }
 
-func (r *userRepository) DeleteUser(id string) error {
+func (r *userRepository) DeleteUser(username string) error {
 	query := `
 	UPDATE users
 	SET is_active = false
-	WHERE id = $1
+	WHERE username = $1
 	`
 
-	_, err := r.db.Exec(query, id)
+	_, err := r.db.Exec(query, username)
 	if err != nil {
 		return err
 	}

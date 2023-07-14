@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"enigmacamp.com/final-project/team-4/track-prosto/delivery/middleware"
+	"enigmacamp.com/final-project/team-4/track-prosto/delivery/utils"
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/usecase"
 	"github.com/gin-gonic/gin"
@@ -25,7 +26,7 @@ func NewUserController(r *gin.Engine, userUC usecase.UserUseCase) {
 	// r.GET("/users/:id", userController.GetUserByID)
 	r.GET("/users/:username", middleware.JWTAuthMiddleware(), userController.GetUserByUsername)
 	r.GET("/users", middleware.JWTAuthMiddleware(), userController.GetAllUsers)
-	r.DELETE("/users/:id", middleware.JWTAuthMiddleware(), userController.DeleteUser)
+	r.DELETE("/users/:username", middleware.JWTAuthMiddleware(), userController.DeleteUser)
 }
 func (uc *UserController) CreateUser(c *gin.Context) {
 	var user model.User
@@ -52,7 +53,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 }
 
 func (uc *UserController) UpdateUser(c *gin.Context) {
-	userID := c.Param("id")
+	userID := c.Param("username")
 
 	var user model.User
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -61,7 +62,27 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 	}
 	user.ID = userID
 
-	if err := uc.userUseCase.UpdateUser(&user); err != nil {
+	token, err := utils.ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
+		return
+	}
+
+	claims, err := utils.VerifyJWTToken(token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+	userName := claims["username"].(string)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to encrypt password"})
+		return
+	}
+
+	user.Password = string(hashedPassword)
+	user.IsActive = true
+	if err := uc.userUseCase.UpdateUser(&user, userName); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -112,9 +133,9 @@ func (uc *UserController) GetAllUsers(c *gin.Context) {
 }
 
 func (uc *UserController) DeleteUser(c *gin.Context) {
-	userID := c.Param("id")
+	username := c.Param("username")
 
-	if err := uc.userUseCase.DeleteUser(userID); err != nil {
+	if err := uc.userUseCase.DeleteUser(username); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
 		return
 	}

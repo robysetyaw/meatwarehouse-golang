@@ -15,7 +15,8 @@ type DailyExpenditureRepository interface {
 	GetAllDailyExpenditures() ([]*model.DailyExpenditure, error)
 	DeleteDailyExpenditure(id string) error
 	GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error)
-}
+	GetExpendituresByDateRange(startDate time.Time, endDate time.Time) ([]*model.DailyExpenditure, error)
+}	
 
 type dailyExpenditureRepository struct {
 	db *sql.DB
@@ -149,4 +150,43 @@ func (repo *dailyExpenditureRepository) DeleteDailyExpenditure(id string) error 
 	}
 
 	return nil
+}
+
+func (repo *dailyExpenditureRepository) GetExpendituresByDateRange(startDate time.Time, endDate time.Time) ([]*model.DailyExpenditure, error) {
+    var expenditures []*model.DailyExpenditure
+
+    rows, err := repo.db.Query(`
+        SELECT id, user_id, amount, description, is_active, created_at, updated_at, created_by, updated_by
+        FROM daily_expenditures
+        WHERE date >= $1 AND date <= $2
+    `, startDate, endDate)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get expenditures by date range: %w", err)
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var expenditure model.DailyExpenditure
+        if err := rows.Scan(
+            &expenditure.ID,
+            &expenditure.UserID,
+            &expenditure.Amount,
+            &expenditure.Description,
+            &expenditure.IsActive,
+            &expenditure.CreatedAt,
+            &expenditure.UpdatedAt,
+            &expenditure.CreatedBy,
+            &expenditure.UpdatedBy,
+        ); err != nil {
+            return nil, fmt.Errorf("failed to scan expenditure row: %w", err)
+        }
+
+        expenditures = append(expenditures, &expenditure)
+    }
+
+    if err := rows.Err(); err != nil {
+        return nil, fmt.Errorf("error occurred while iterating over expenditure rows: %w", err)
+    }
+
+    return expenditures, nil
 }

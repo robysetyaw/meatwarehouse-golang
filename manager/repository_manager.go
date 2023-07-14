@@ -10,6 +10,7 @@ type RepoManager interface {
 	GetUserRepo() repository.UserRepository
 	GetMeatRepo() repository.MeatRepository
 	GetDailyExpenditureRepo() repository.DailyExpenditureRepository
+
 	GetCustomerRepo() repository.CustomerRepository
 	GetCompanyRepo() repository.CompanyRepository
 }
