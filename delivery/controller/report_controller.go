@@ -47,7 +47,7 @@ func (erc *ReportController) GenerateExpenditureReport(c *gin.Context) {
 	
 	report, err := erc.reportUseCase.GenerateExpenditureReport(startDate, endDate)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate expenditure report"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

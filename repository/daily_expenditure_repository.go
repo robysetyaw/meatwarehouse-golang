@@ -16,7 +16,8 @@ type DailyExpenditureRepository interface {
 	DeleteDailyExpenditure(id string) error
 	GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error)
 	GetExpendituresByDateRange(startDate time.Time, endDate time.Time) ([]*model.DailyExpenditureReport, error)
-}	
+	GetLastNotaNumber(date string) (int, error)
+}
 
 type dailyExpenditureRepository struct {
 	db *sql.DB
@@ -29,18 +30,17 @@ func NewDailyExpenditureRepository(db *sql.DB) DailyExpenditureRepository {
 }
 
 func (repo *dailyExpenditureRepository) GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error) {
-    var total float64
-    err := repo.db.QueryRow(`
+	var total float64
+	err := repo.db.QueryRow(`
         SELECT SUM(amount) FROM daily_expenditures
         WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2
     `, startDate, endDate).Scan(&total)
-    if err != nil {
-        return 0, fmt.Errorf("failed to get total expenditure: %w", err)
-    }
+	if err != nil {
+		return 0, fmt.Errorf("failed to get total expenditure: %w", err)
+	}
 	// fmt.Print(startDate)
-    return total, nil
+	return total, nil
 }
-
 
 func (repo *dailyExpenditureRepository) CreateDailyExpenditure(expenditure *model.DailyExpenditure) error {
 	now := time.Now()
@@ -49,9 +49,9 @@ func (repo *dailyExpenditureRepository) CreateDailyExpenditure(expenditure *mode
 
 	// Perform database insert operation
 	_, err := repo.db.Exec(`
-		INSERT INTO daily_expenditures (id, user_id, amount, description, is_active, created_at, updated_at, created_by, updated_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-	`, expenditure.ID, expenditure.UserID, expenditure.Amount, expenditure.Description, expenditure.IsActive,  expenditure.CreatedAt, expenditure.UpdatedAt, expenditure.CreatedBy, expenditure.CreatedBy)
+		INSERT INTO daily_expenditures (id, user_id, amount, description, is_active, created_at, updated_at, created_by, updated_by, de_note, date)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	`, expenditure.ID, expenditure.UserID, expenditure.Amount, expenditure.Description, expenditure.IsActive, expenditure.CreatedAt, expenditure.UpdatedAt, expenditure.CreatedBy, expenditure.CreatedBy, expenditure.DeNote, expenditure.Date)
 	if err != nil {
 		return fmt.Errorf("failed to create daily expenditure: %w", err)
 	}
@@ -108,9 +108,9 @@ func (repo *dailyExpenditureRepository) GetDailyExpenditureByID(id string) (*mod
 func (repo *dailyExpenditureRepository) GetAllDailyExpenditures() ([]*model.DailyExpenditure, error) {
 	// Perform database query to retrieve all daily expenditures
 	rows, err := repo.db.Query(`
-		SELECT id, user_id, amount, description, is_active, created_at, updated_at, created_by, updated_by
+		SELECT id, user_id, amount, description, is_active, created_at, updated_at, created_by, updated_by, de_note, date
 		FROM daily_expenditures WHERE is_active = true
-	`) 
+	`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all daily expenditures: %w", err)
 	}
@@ -130,6 +130,8 @@ func (repo *dailyExpenditureRepository) GetAllDailyExpenditures() ([]*model.Dail
 			&expenditure.UpdatedAt,
 			&expenditure.CreatedBy,
 			&expenditure.UpdatedBy,
+			&expenditure.DeNote,
+			&expenditure.Date,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan daily expenditure row: %w", err)
@@ -139,6 +141,7 @@ func (repo *dailyExpenditureRepository) GetAllDailyExpenditures() ([]*model.Dail
 
 	return expenditures, nil
 }
+
 
 func (repo *dailyExpenditureRepository) DeleteDailyExpenditure(id string) error {
 	// Perform database delete operation
@@ -193,3 +196,15 @@ func (repo *dailyExpenditureRepository) GetExpendituresByDateRange(startDate tim
 	return expenditures, nil
 }
 
+func (repo *dailyExpenditureRepository) GetLastNotaNumber(date string) (int, error) {
+	var count int
+	err := repo.db.QueryRow(`
+		SELECT COUNT(*) FROM daily_expenditures
+		WHERE DATE(created_at) = $1
+	`, date).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get last nota number: %w", err)
+	}
+
+	return count + 1, nil
+}

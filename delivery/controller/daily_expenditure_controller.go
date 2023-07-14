@@ -86,11 +86,20 @@ func (dec *DailyExpenditureController) CreateDailyExpenditure(c *gin.Context) {
 		return
 	}
 
+	noteNumber, err := dec.dailyExpenditureUseCase.GenerateNotaNumber()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate nota number"})
+		return
+	}
+	now := time.Now().Format("2006-01-02")
+
 	userID := claims["user_id"].(string)
 	userName := claims["username"].(string)
 	expenditure.UserID = userID
 	expenditure.CreatedBy = userName
 	expenditure.ID = uuid.New().String()
+	expenditure.DeNote = noteNumber
+	expenditure.Date = now
 
 	if err := dec.dailyExpenditureUseCase.CreateDailyExpenditure(&expenditure); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create daily expenditure"})
@@ -139,7 +148,7 @@ func (dec *DailyExpenditureController) GetDailyExpenditureByID(c *gin.Context) {
 
 	expenditure, err := dec.dailyExpenditureUseCase.GetDailyExpenditureByID(expenditureID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get daily expenditure"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -154,7 +163,7 @@ func (dec *DailyExpenditureController) GetDailyExpenditureByID(c *gin.Context) {
 func (dec *DailyExpenditureController) GetAllDailyExpenditures(c *gin.Context) {
 	expenditures, err := dec.dailyExpenditureUseCase.GetAllDailyExpenditures()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get daily expenditures"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

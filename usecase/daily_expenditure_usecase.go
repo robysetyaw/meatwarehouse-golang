@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"fmt"
 	"time"
 
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
@@ -14,6 +15,7 @@ type DailyExpenditureUseCase interface {
 	GetAllDailyExpenditures() ([]*model.DailyExpenditure, error)
 	DeleteDailyExpenditure(id string) error
 	GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error)
+	GenerateNotaNumber() (string, error)
 }
 
 type dailyExpenditureUseCase struct {
@@ -53,5 +55,21 @@ func (uc *dailyExpenditureUseCase) DeleteDailyExpenditure(id string) error {
 }
 
 func (uc *dailyExpenditureUseCase) GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error) {
-    return uc.dailyExpenditureRepo.GetTotalExpenditureByDateRange(startDate, endDate)
+	return uc.dailyExpenditureRepo.GetTotalExpenditureByDateRange(startDate, endDate)
+}
+
+func (uc *dailyExpenditureUseCase) GenerateNotaNumber() (string, error) {
+	now := time.Now().Format("20060102")
+	lastNotaNumber, err := uc.dailyExpenditureRepo.GetLastNotaNumber(now)
+	if err != nil {
+		return "", err
+	}
+
+	year := time.Now().Format("2006")
+	month := time.Now().Format("01")
+	day := time.Now().Format("02")
+
+	noteNumber := fmt.Sprintf("DE-%s%s%s%04d", year, month, day, lastNotaNumber)
+
+	return noteNumber, nil
 }

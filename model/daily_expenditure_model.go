@@ -7,6 +7,7 @@ import (
 type DailyExpenditure struct {
 	ID          string    `json:"id"`
 	UserID      string    `json:"user_id"`
+	DeNote      string    `json:"de_note"`
 	Amount      float64   `json:"amount" binding:"required"`
 	Description string    `json:"description"`
 	IsActive    bool      `json:"is_active"`
