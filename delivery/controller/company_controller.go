@@ -87,11 +87,13 @@ func (cc *CompanyController) UpdateCompany(c *gin.Context) {
 	company.ID = companyID
 
 	if err := cc.companyUseCase.UpdateCompany(&company); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update daily expenditure"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update company"})
 		return
 	}
 
-	c.JSON(http.StatusOK, company)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "update update data company",
+	})
 }
 
 func (cc *CompanyController) GetCompanyById(c *gin.Context) {
@@ -99,12 +101,12 @@ func (cc *CompanyController) GetCompanyById(c *gin.Context) {
 
 	company, err := cc.companyUseCase.GetCompanyById(companyId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get daily company"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get company"})
 		return
 	}
 
 	if company == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Daily company not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "company not found"})
 		return
 	}
 
@@ -114,7 +116,7 @@ func (cc *CompanyController) GetCompanyById(c *gin.Context) {
 func (cc *CompanyController) GetAllCompany(c *gin.Context) {
 	companies, err := cc.companyUseCase.GetAllCompany()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get daily companies"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get companies"})
 		return
 	}
 

@@ -24,6 +24,9 @@ func NewCustomerController(r *gin.Engine, customerUsecase usecase.CustomerUseCas
 	}
 	r.POST("/customer", middleware.JWTAuthMiddleware(), controller.CreateCustomer)
 	r.GET("/customers", middleware.JWTAuthMiddleware(), controller.GetAllCustomer)
+	r.GET("/customer/:id", middleware.JWTAuthMiddleware(), controller.GetCustomerByID)
+	r.PUT("/customer", middleware.JWTAuthMiddleware(), controller.UpdateCustomer)
+	r.DELETE("/customer/:id", middleware.JWTAuthMiddleware(), controller.DeleteCustomer)
 	return controller
 }
 
@@ -53,30 +56,127 @@ func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 	if err := cc.customerUsecase.CreateCustomer(&customer); err != nil {
 		appError := apperror.AppError{}
 		if errors.As(err, &appError) {
-			fmt.Printf("ServiceHandler.InsertService() 1 : %v ", err.Error())
+			fmt.Printf("customerUsecase.CreateCustomer() : %v ", err.Error())
 			c.JSON(http.StatusBadGateway, gin.H{
-				"success":      false,
 				"errorMessage": appError.Error(),
 			})
 		} else {
-			fmt.Printf("ServiceHandler.InsertService() 2 : %v ", err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"success":      false,
 				"errorMessage": "failed to create customer",
 			})
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, customer)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "success insert data customer",
+	})
+}
+
+func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
+	customerID := c.Param("id")
+
+	var customer model.CustomerModel
+	if err := c.ShouldBindJSON(&customer); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := utils.ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
+		return
+	}
+
+	claims, err := utils.VerifyJWTToken(token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+	userName := claims["username"].(string)
+	customer.UpdatedBy = userName
+	customer.Id = customerID
+
+	if err := cc.customerUsecase.UpdateCustomer(&customer); err != nil {
+		appError := apperror.AppError{}
+		if errors.As(err, &appError) {
+			fmt.Printf(" cc.customerUsecase.UpdateCustomer() : %v ", err.Error())
+			c.JSON(http.StatusBadGateway, gin.H{
+				"errorMessage": appError.Error(),
+			})
+		} else {
+			fmt.Printf("ServiceHandler.InsertService() 2 : %v ", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"errorMessage": "failed to update customer",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "success update data company",
+	})
 }
 
 func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 	customers, err := cc.customerUsecase.GetAllCustomers()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get daily companies"})
+		appError := apperror.AppError{}
+		if errors.As(err, &appError) {
+			fmt.Printf(" cc.customerUsecase.GetAllCustomers() : %v ", err.Error())
+			c.JSON(http.StatusBadGateway, gin.H{
+				"errorMessage": appError.Error(),
+			})
+		} else {
+			fmt.Printf("ServiceHandler.InsertService() 2 : %v ", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"errorMessage": "failed to get customers",
+			})
+		}
 		return
 	}
 
 	c.JSON(http.StatusOK, customers)
+}
+
+func (cc *CustomerController) GetCustomerByID(c *gin.Context) {
+	customerId := c.Param("id")
+
+	expenditure, err := cc.customerUsecase.GetCustomerById(customerId)
+	if err != nil {
+		appError := apperror.AppError{}
+		if errors.As(err, &appError) {
+			fmt.Printf(" cc.customerUsecase.GetCustomerById() : %v ", err.Error())
+			c.JSON(http.StatusBadGateway, gin.H{
+				"errorMessage": appError.Error(),
+			})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"errorMessage": "failed to get customer",
+			})
+		}
+		return
+	}
+	c.JSON(http.StatusOK, expenditure)
+}
+
+func (cc *CustomerController) DeleteCustomer(c *gin.Context) {
+	customerId := c.Param("id")
+
+	if err := cc.customerUsecase.DeleteCustomer(customerId); err != nil {
+		appError := apperror.AppError{}
+		if errors.As(err, &appError) {
+			fmt.Printf(" cc.customerUsecase.DeleteCustomer() : %v ", err.Error())
+			c.JSON(http.StatusBadGateway, gin.H{
+				"errorMessage": appError.Error(),
+			})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"errorMessage": "failed to delete customer",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "customer deleted successfully"})
 }

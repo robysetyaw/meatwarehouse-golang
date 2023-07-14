@@ -92,19 +92,64 @@ func (cu *customerUseCase) CreateCustomer(customerReq *model.CustomerReqModel) e
 }
 
 func (cu *customerUseCase) UpdateCustomer(customer *model.CustomerModel) error {
-	existName, err := cu.customerRepo.
+	// Set updated_at timestamp
+	customer.UpdatedAt = time.Now()
+	existName, err := cu.customerRepo.GetCustomerByName(customer.FullName)
+	if err != nil {
+		return fmt.Errorf("error on customerRepo.GetCustomerByName() : %w", err)
+	}
+	if existName == nil {
+		return apperror.AppError{
+			ErrorCode:    404,
+			ErrorMassage: fmt.Sprintf("Customer with name : %v not found", customer.FullName),
+		}
+	}
 
 	return cu.customerRepo.UpdateCustomer(customer)
 }
 
 func (cu *customerUseCase) GetCustomerById(id string) (*model.CustomerModel, error) {
-	return cu.customerRepo.GetCustomerById(id)
+	customer, err := cu.customerRepo.GetCustomerById(id)
+	if err != nil {
+		return nil, fmt.Errorf("error oncustomerRepo.GetCustomerById() %w : ", err)
+
+	}
+
+	if customer == nil {
+		return nil, apperror.AppError{
+			ErrorCode:    400,
+			ErrorMassage: fmt.Sprintf("data customer with id : %s not found", id),
+		}
+	}
+
+	return customer, nil
 }
 
 func (cu *customerUseCase) GetAllCustomers() ([]*model.CustomerModel, error) {
-	return cu.customerRepo.GetAllCustomer()
+	customers, err := cu.customerRepo.GetAllCustomer()
+	if err != nil {
+		return nil, fmt.Errorf("error oncustomerRepo.GetCustomerById() %w : ", err)
+
+	}
+	if customers == nil {
+		return nil, apperror.AppError{
+			ErrorCode:    400,
+			ErrorMassage: "data customer is empty",
+		}
+	}
+	return customers, nil
 }
 
 func (cu *customerUseCase) DeleteCustomer(id string) error {
+	existId, err := cu.customerRepo.GetCustomerById(id)
+	if err != nil {
+		return fmt.Errorf("error oncustomerRepo.GetCustomerById() %w : ", err)
+	}
+	if existId == nil {
+		return apperror.AppError{
+			ErrorCode:    400,
+			ErrorMassage: fmt.Sprintf("data customer with id : %s not found", id),
+		}
+	}
 	return cu.customerRepo.DeleteCustomer(id)
 }

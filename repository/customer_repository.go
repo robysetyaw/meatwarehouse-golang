@@ -3,7 +3,6 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-	"time"
 
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 )
@@ -12,6 +11,7 @@ type CustomerRepository interface {
 	CreateCustomer(*model.CustomerModel) error
 	UpdateCustomer(*model.CustomerModel) error
 	GetCustomerById(string) (*model.CustomerModel, error)
+	GetCustomerByName(string) (*model.CustomerModel, error)
 	GetAllCustomer() ([]*model.CustomerModel, error)
 	DeleteCustomer(string) error
 }
@@ -40,9 +40,6 @@ func (repo *customerRepository) CreateCustomer(customer *model.CustomerModel) er
 }
 
 func (repo *customerRepository) UpdateCustomer(customer *model.CustomerModel) error {
-	// Set updated_at timestamp
-	customer.UpdatedAt = time.Now()
-
 	// Perform database update operation
 	_, err := repo.db.Exec(`
 		UPDATE customers
@@ -80,6 +77,35 @@ func (repo *customerRepository) GetCustomerById(id string) (*model.CustomerModel
 			return nil, nil // customer not found
 		}
 		return nil, fmt.Errorf("failed to get customer by ID: %w", err)
+	}
+
+	return &customer, nil
+}
+
+func (repo *customerRepository) GetCustomerByName(customerName string) (*model.CustomerModel, error) {
+	var customer model.CustomerModel
+
+	// Perform database query to retrieve the customer by name
+	err := repo.db.QueryRow(`
+		SELECT id, fullname, address, company_id, phone_number, created_at, updated_at, created_by, updated_by
+		FROM customers
+		WHERE fullname = $1
+	`, customerName).Scan(
+		&customer.Id,
+		&customer.FullName,
+		&customer.Address,
+		&customer.CompanyId,
+		&customer.PhoneNumber,
+		&customer.CreatedAt,
+		&customer.UpdatedAt,
+		&customer.CreatedBy,
+		&customer.UpdatedBy,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // customer not found
+		}
+		return nil, fmt.Errorf("failed to get customer by name: %w", err)
 	}
 
 	return &customer, nil
