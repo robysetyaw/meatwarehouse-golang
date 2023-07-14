@@ -25,7 +25,7 @@ func NewCustomerController(r *gin.Engine, customerUsecase usecase.CustomerUseCas
 	r.POST("/customer", middleware.JWTAuthMiddleware(), controller.CreateCustomer)
 	r.GET("/customers", middleware.JWTAuthMiddleware(), controller.GetAllCustomer)
 	r.GET("/customer/:id", middleware.JWTAuthMiddleware(), controller.GetCustomerByID)
-	r.PUT("/customer", middleware.JWTAuthMiddleware(), controller.UpdateCustomer)
+	r.PUT("/customer/:id", middleware.JWTAuthMiddleware(), controller.UpdateCustomer)
 	r.DELETE("/customer/:id", middleware.JWTAuthMiddleware(), controller.DeleteCustomer)
 	return controller
 }
