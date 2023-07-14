@@ -8,6 +8,7 @@ import (
 
 type UsecaseManager interface {
 	GetUserUsecase() usecase.UserUseCase
+	GetMeatUsecase() usecase.MeatUseCase
 	GetLoginUsecase() usecase.LoginUseCase
 	GetDailyExpenditureUsecase() usecase.DailyExpenditureUseCase
 	GetCustomerUsecase() usecase.CustomerUseCase
@@ -18,6 +19,7 @@ type usecaseManager struct {
 	repoManager RepoManager
 
 	userUsecase             usecase.UserUseCase
+	meatUsecase             usecase.MeatUseCase
 	loginUsecase            usecase.LoginUseCase
 	customerUsecase         usecase.CustomerUseCase
 	companyUsecase          usecase.CompanyUseCase
@@ -25,6 +27,7 @@ type usecaseManager struct {
 }
 
 var onceLoadUserUsecase sync.Once
+var onceLoadMeatUsecase sync.Once
 var onceLoadLoginUsecase sync.Once
 var onceLoadCustomerUsecase sync.Once
 var onceLoadCompanyUsecase sync.Once
@@ -36,6 +39,14 @@ func (um *usecaseManager) GetUserUsecase() usecase.UserUseCase {
 	})
 	return um.userUsecase
 }
+
+func (mm *usecaseManager) GetMeatUsecase() usecase.MeatUseCase {
+	onceLoadMeatUsecase.Do(func() {
+		mm.meatUsecase = usecase.NewMeatUseCase(mm.repoManager.GetMeatRepo())
+	})
+	return mm.meatUsecase
+}
+
 func (um *usecaseManager) GetLoginUsecase() usecase.LoginUseCase {
 	onceLoadLoginUsecase.Do(func() {
 		um.loginUsecase = usecase.NewLoginUseCase(um.repoManager.GetUserRepo())

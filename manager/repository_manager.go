@@ -8,6 +8,7 @@ import (
 
 type RepoManager interface {
 	GetUserRepo() repository.UserRepository
+	GetMeatRepo() repository.MeatRepository
 	GetDailyExpenditureRepo() repository.DailyExpenditureRepository
 	GetCustomerRepo() repository.CustomerRepository
 	GetCompanyRepo() repository.CompanyRepository
@@ -18,6 +19,7 @@ type repoManager struct {
 	customerRepo         repository.CustomerRepository
 	userRepo             repository.UserRepository
 	companyRepo          repository.CompanyRepository
+	meatRepo             repository.MeatRepository
 	dailyExpenditureRepo repository.DailyExpenditureRepository
 }
 
@@ -25,6 +27,9 @@ var onceLoadUserRepo sync.Once
 var onceLoadDailyExpenditureRepo sync.Once
 var onceLoadCustomerRepo sync.Once
 var onceLoadCompanyRepo sync.Once
+var onceLoadPlantRepo sync.Once
+var onceLoadBillRepo sync.Once
+var onceLoadMeatRepo sync.Once
 
 func (rm *repoManager) GetUserRepo() repository.UserRepository {
 	onceLoadUserRepo.Do(func() {
@@ -43,6 +48,13 @@ func (rm *repoManager) GetCompanyRepo() repository.CompanyRepository {
 		rm.companyRepo = repository.NewCompanyRepository(rm.infraManager.GetDB())
 	})
 	return rm.companyRepo
+}
+
+func (rm *repoManager) GetMeatRepo() repository.MeatRepository {
+	onceLoadMeatRepo.Do(func() {
+		rm.meatRepo = repository.NewMeatRepository(rm.infraManager.GetDB())
+	})
+	return rm.meatRepo
 }
 
 func (rm *repoManager) GetDailyExpenditureRepo() repository.DailyExpenditureRepository {
