@@ -22,6 +22,8 @@ func (s *Server) Run() {
 func (s *Server) initController() {
 	controller.NewUserController(s.engine, s.useCaseManager.GetUserUsecase())
 	controller.NewLoginController(s.engine, s.useCaseManager.GetLoginUsecase())
+	controller.NewCompanyController(s.engine, s.useCaseManager.GetCompanyUsecase())
+	controller.NewCustomerController(s.engine, s.useCaseManager.GetCustomerUsecase())
 }
 func NewServer() *Server {
 	c, err := config.NewConfig()

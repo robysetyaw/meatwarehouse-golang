@@ -2,7 +2,7 @@ package model
 
 import "time"
 
-type CustomerModel struct {
+type CustomerReqModel struct {
 	Id          string    `json:"id"`
 	FullName    string    `json:"fullname" binding:"required"`
 	Address     string    `json:"address"`
@@ -12,4 +12,6 @@ type CustomerModel struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 	CreatedBy   string    `json:"created_by"`
 	UpdatedBy   string    `json:"updated_by"`
+
+	Company Company
 }

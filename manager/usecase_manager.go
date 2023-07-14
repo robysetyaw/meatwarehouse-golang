@@ -10,6 +10,8 @@ type UsecaseManager interface {
 	GetUserUsecase() usecase.UserUseCase
 	GetLoginUsecase() usecase.LoginUseCase
 	GetDailyExpenditureUsecase() usecase.DailyExpenditureUseCase
+	GetCustomerUsecase() usecase.CustomerUseCase
+	GetCompanyUsecase() usecase.CompanyUseCase
 }
 
 type usecaseManager struct {
@@ -17,11 +19,15 @@ type usecaseManager struct {
 
 	userUsecase             usecase.UserUseCase
 	loginUsecase            usecase.LoginUseCase
+	customerUsecase         usecase.CustomerUseCase
+	companyUsecase          usecase.CompanyUseCase
 	dailyExpenditureUsecase usecase.DailyExpenditureUseCase
 }
 
 var onceLoadUserUsecase sync.Once
 var onceLoadLoginUsecase sync.Once
+var onceLoadCustomerUsecase sync.Once
+var onceLoadCompanyUsecase sync.Once
 var onceLoadDailyExpenditureUsecase sync.Once
 
 func (um *usecaseManager) GetUserUsecase() usecase.UserUseCase {
@@ -35,6 +41,18 @@ func (um *usecaseManager) GetLoginUsecase() usecase.LoginUseCase {
 		um.loginUsecase = usecase.NewLoginUseCase(um.repoManager.GetUserRepo())
 	})
 	return um.loginUsecase
+}
+func (um *usecaseManager) GetCustomerUsecase() usecase.CustomerUseCase {
+	onceLoadCustomerUsecase.Do(func() {
+		um.customerUsecase = usecase.NewCustomerUseCase(um.repoManager.GetCustomerRepo(), um.repoManager.GetCompanyRepo())
+	})
+	return um.customerUsecase
+}
+func (um *usecaseManager) GetCompanyUsecase() usecase.CompanyUseCase {
+	onceLoadCompanyUsecase.Do(func() {
+		um.companyUsecase = usecase.NewCompanyUseCase(um.repoManager.GetCompanyRepo())
+	})
+	return um.companyUsecase
 }
 
 func (um *usecaseManager) GetDailyExpenditureUsecase() usecase.DailyExpenditureUseCase {
