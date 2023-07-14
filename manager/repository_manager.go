@@ -27,8 +27,6 @@ var onceLoadUserRepo sync.Once
 var onceLoadDailyExpenditureRepo sync.Once
 var onceLoadCustomerRepo sync.Once
 var onceLoadCompanyRepo sync.Once
-var onceLoadPlantRepo sync.Once
-var onceLoadBillRepo sync.Once
 var onceLoadMeatRepo sync.Once
 
 func (rm *repoManager) GetUserRepo() repository.UserRepository {
