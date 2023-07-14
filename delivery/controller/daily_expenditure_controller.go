@@ -26,7 +26,7 @@ func NewDailyExpenditureController(r *gin.Engine, deUC usecase.DailyExpenditureU
 	r.GET("/daily-expenditures/:id",middleware.JWTAuthMiddleware(), controller.GetDailyExpenditureByID)
 	r.GET("/daily-expenditures",middleware.JWTAuthMiddleware(), controller.GetAllDailyExpenditures)
 	r.DELETE("/daily-expenditures/:id",middleware.JWTAuthMiddleware(), controller.DeleteDailyExpenditure)
-	r.GET("/daily-expenditures/total", controller.GetTotalExpenditureByDateRange)
+	// r.GET("/daily-expenditures/total", controller.GetTotalExpenditureByDateRange)
 
 
 	return controller
@@ -86,11 +86,20 @@ func (dec *DailyExpenditureController) CreateDailyExpenditure(c *gin.Context) {
 		return
 	}
 
+	noteNumber, err := dec.dailyExpenditureUseCase.GenerateNotaNumber()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate nota number"})
+		return
+	}
+	now := time.Now().Format("2006-01-02")
+
 	userID := claims["user_id"].(string)
 	userName := claims["username"].(string)
 	expenditure.UserID = userID
 	expenditure.CreatedBy = userName
 	expenditure.ID = uuid.New().String()
+	expenditure.DeNote = noteNumber
+	expenditure.Date = now
 
 	if err := dec.dailyExpenditureUseCase.CreateDailyExpenditure(&expenditure); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create daily expenditure"})
@@ -111,6 +120,21 @@ func (dec *DailyExpenditureController) UpdateDailyExpenditure(c *gin.Context) {
 
 	expenditure.ID = expenditureID
 
+	token, err := utils.ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
+		return
+	}
+
+	claims, err := utils.VerifyJWTToken(token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	expenditure.UpdatedBy = claims["username"].(string)
+	expenditure.IsActive = true
+
 	if err := dec.dailyExpenditureUseCase.UpdateDailyExpenditure(&expenditure); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update daily expenditure"})
 		return
@@ -124,7 +148,7 @@ func (dec *DailyExpenditureController) GetDailyExpenditureByID(c *gin.Context) {
 
 	expenditure, err := dec.dailyExpenditureUseCase.GetDailyExpenditureByID(expenditureID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get daily expenditure"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -139,7 +163,7 @@ func (dec *DailyExpenditureController) GetDailyExpenditureByID(c *gin.Context) {
 func (dec *DailyExpenditureController) GetAllDailyExpenditures(c *gin.Context) {
 	expenditures, err := dec.dailyExpenditureUseCase.GetAllDailyExpenditures()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get daily expenditures"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
