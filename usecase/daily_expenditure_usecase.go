@@ -53,5 +53,5 @@ func (uc *dailyExpenditureUseCase) DeleteDailyExpenditure(id string) error {
 }
 
 func (uc *dailyExpenditureUseCase) GetTotalExpenditureByDateRange(startDate time.Time, endDate time.Time) (float64, error) {
-    return uc.dailyExpenditureRepo.GetTotalExpenditureByDateRange(startDate, endDate)
+	return uc.dailyExpenditureRepo.GetTotalExpenditureByDateRange(startDate, endDate)
 }
