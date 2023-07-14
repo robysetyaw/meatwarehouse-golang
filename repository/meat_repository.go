@@ -31,8 +31,10 @@ func (mr *meatRepository) CreateMeat(meat *model.Meat) error {
 	INSERT INTO meats (id, name, stock, price, is_active, created_at, updated_at, created_by, updated_by)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
+	createdAt := time.Now()
 	updatedAt := time.Now()
-	_, err := mr.db.Exec(query, meat.ID, meat.Name, meat.Stock, meat.Price, meat.IsActive, meat.CreatedAt, updatedAt, meat.CreatedBy, meat.UpdatedBy)
+	isActive := true
+	_, err := mr.db.Exec(query, meat.ID, meat.Name, meat.Stock, meat.Price, isActive, createdAt, updatedAt, meat.CreatedBy, meat.UpdatedBy)
 	if err != nil {
 		return err
 	}

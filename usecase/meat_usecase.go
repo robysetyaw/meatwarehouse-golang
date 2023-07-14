@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"fmt"
-	"time"
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/repository"
 )
@@ -26,9 +25,6 @@ func NewMeatUseCase(meatRepo repository.MeatRepository) MeatUseCase {
 
 func (ms *meatUseCase) CreateMeat(meat *model.Meat) error {
 
-	meat.IsActive = true
-	meat.CreatedAt = time.Now()
-	meat.CreatedBy = "admin"
 
 	err := ms.meatRepository.CreateMeat(meat)
 	if err != nil {
