@@ -4,7 +4,7 @@ import "time"
 
 type TransactionHeader struct {
 	ID                 string               `json:"id"`
-	Date               time.Time            `json:"date"`
+	Date               string            `json:"date"`
 	InvoiceNumber      string               `json:"invoice_number"`
 	CustomerID         string               `json:"customer_id"`
 	Name               string               `json:"name"`

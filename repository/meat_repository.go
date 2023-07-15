@@ -16,6 +16,7 @@ type MeatRepository interface {
 	UpdateMeat(meat *model.Meat) error
 	DeleteMeat(string) error
 	ReduceStock(meatID string, qty float64) error
+	IncreaseStock(meatID string, qty float64) error
 }
 
 type meatRepository struct {
@@ -158,6 +159,16 @@ func (r *meatRepository) UpdateMeat(meat *model.Meat) error {
 
 func (r *meatRepository) ReduceStock(meatID string, qty float64) error {
 	query := "UPDATE meats SET stock = stock - $1 WHERE id = $2"
+	_, err := r.db.Exec(query, qty,meatID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *meatRepository) IncreaseStock(meatID string, qty float64) error {
+	query := "UPDATE meats SET stock = stock + $1 WHERE id = $2"
 	_, err := r.db.Exec(query, qty,meatID)
 	if err != nil {
 		return err

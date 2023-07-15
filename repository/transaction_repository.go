@@ -47,7 +47,7 @@ func (repo *transactionRepository) CreateTransactionHeader(header *model.Transac
 	// Create transaction details
 	query = "INSERT INTO transaction_details (id,transaction_id, meat_id, meat_name, qty, price, total, is_active, created_at, updated_at, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)"
 	for _, detail := range header.TransactionDetails {
-		_, err := tx.Exec(query,detail.ID, header.ID, detail.MeatID, detail.MeatName, detail.Qty, detail.Price, detail.Total, header.IsActive, detail.CreatedAt, detail.UpdatedAt, header.CreatedBy, header.CreatedBy)
+		_, err := tx.Exec(query,detail.ID, header.ID, detail.MeatID, detail.MeatName, detail.Qty, detail.Price, detail.Total, header.IsActive, header.CreatedAt, header.UpdatedAt, header.CreatedBy, header.CreatedBy)
 		if err != nil {
 			// tx.Rollback()
 			return fmt.Errorf("failed to create transaction detail: %w", err)
