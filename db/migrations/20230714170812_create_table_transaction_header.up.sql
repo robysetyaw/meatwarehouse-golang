@@ -1,6 +1,7 @@
 CREATE TABLE transaction_headers (
     id VARCHAR PRIMARY KEY,
     date DATE,
+    inv_number VARCHAR,
     customer_id VARCHAR,
     name VARCHAR,
     address VARCHAR,

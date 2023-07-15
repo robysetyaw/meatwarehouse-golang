@@ -11,6 +11,10 @@ import (
 
 type TransactionUseCase interface {
 	CreateTransaction(transaction *model.TransactionHeader) error
+	GetAllTransactions() ([]*model.TransactionHeader, error)
+	GetTransactionByID(id string) (*model.TransactionHeader, error)
+	DeleteTransaction(id string) error
+	
 }
 
 type transactionUseCase struct {
@@ -24,40 +28,43 @@ func NewTransactionUseCase(transactionRepo repository.TransactionRepository) Tra
 }
 
 func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHeader) error {
-	// Validate transaction data
-	if err := validateTransaction(transaction); err != nil {
+	// Generate invoice number
+	today := time.Now().Format("20060102")
+	number, err := uc.transactionRepo.CountTransactions()
+	if err != nil {
 		return err
 	}
 
-	// Set created and updated timestamps
-	now := time.Now()
-	transaction.CreatedAt = now
-	transaction.UpdatedAt = now
-
-	// Set created by and updated by
-	// Replace with appropriate logic to get the user ID or username
-	transaction.CreatedBy = "user123"
-	transaction.UpdatedBy = "user123"
-
-	// Generate unique ID for the transaction
+	invoiceNumber := fmt.Sprintf("INV-%s-%04d", today, number )
 	transaction.ID = common.UuidGenerate()
+	transaction.IsActive = true
+	transaction.CreatedAt = time.Now()
+	transaction.UpdatedAt = time.Now()
+	transaction.InvoiceNumber = invoiceNumber
 
-	// Create the transaction
-	if err := uc.transactionRepo.CreateTransaction(transaction); err != nil {
+	// Perform any business logic or validation before creating the transaction
+	// ...
+
+	// Create transaction header
+	if err := uc.transactionRepo.CreateTransactionHeader(transaction); err != nil {
 		return fmt.Errorf("failed to create transaction: %w", err)
 	}
-
 	return nil
 }
 
-func validateTransaction(transaction *model.TransactionHeader) error {
-	// Add your validation logic here
-	// Return an error if the transaction data is not valid
-	return nil
+func (uc *transactionUseCase) GetAllTransactions() ([]*model.TransactionHeader, error) {
+	return uc.transactionRepo.GetAllTransactions()
 }
 
-func generateTransactionID() string {
-	// Replace with your custom logic to generate a unique transaction ID
-	// Example: return "TX-202307120001"
-	return "TX-202307120001"
+func (uc *transactionUseCase) GetTransactionByID(id string) (*model.TransactionHeader, error) {
+	transaction, err := uc.transactionRepo.GetTransactionByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transaction: %w", err)
+	}
+
+	return transaction, nil
+}
+
+func (uc *transactionUseCase) DeleteTransaction(id string) error {
+	return uc.transactionRepo.DeleteTransaction(id)
 }
