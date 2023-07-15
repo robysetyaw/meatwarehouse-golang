@@ -10,7 +10,6 @@ import (
 
 type TransactionRepository interface {
 	CreateTransactionHeader(header *model.TransactionHeader) error
-	CreateTransactionDetail(transactionID string, detail *model.TransactionDetail) error
 	GetTransactionByID(id string) (*model.TransactionHeader, error)
 	GetAllTransactions() ([]*model.TransactionHeader, error)
 	DeleteTransaction(id string) error
@@ -61,28 +60,9 @@ func (repo *transactionRepository) CreateTransactionHeader(header *model.Transac
 		// tx.Rollback()
 		return err
 	}
-
+	tx.Commit()
 	return nil
 }
-
-
-func (repo *transactionRepository) CreateTransactionDetail(transactionID string, detail *model.TransactionDetail) error {
-	now := time.Now()
-	detail.CreatedAt = now
-	detail.UpdatedAt = now
-
-	// Perform database insert operation
-	_, err := repo.db.Exec(`
-		INSERT INTO transaction_details (transaction_id, meat_id, meat_name, qty, price, total, is_active, created_at, updated_at, created_by, updated_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-	`, transactionID, detail.MeatID, detail.MeatName, detail.Qty, detail.Price, detail.Total, detail.IsActive, detail.CreatedAt, detail.UpdatedAt, detail.CreatedBy, detail.UpdatedBy)
-	if err != nil {
-		return fmt.Errorf("failed to create transaction detail: %w", err)
-	}
-
-	return nil
-}
-
 
 func (repo *transactionRepository) GetTransactionByID(id string) (*model.TransactionHeader, error) {
 	var transaction model.TransactionHeader
