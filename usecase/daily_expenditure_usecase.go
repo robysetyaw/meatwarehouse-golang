@@ -20,18 +20,26 @@ type DailyExpenditureUseCase interface {
 
 type dailyExpenditureUseCase struct {
 	dailyExpenditureRepo repository.DailyExpenditureRepository
+	userRepo repository.UserRepository
 }
 
-func NewDailyExpenditureUseCase(deRepo repository.DailyExpenditureRepository) DailyExpenditureUseCase {
+func NewDailyExpenditureUseCase(deRepo repository.DailyExpenditureRepository, userRepo repository.UserRepository) DailyExpenditureUseCase {
 	return &dailyExpenditureUseCase{
 		dailyExpenditureRepo: deRepo,
+		userRepo: userRepo,
 	}
 }
 
 func (uc *dailyExpenditureUseCase) CreateDailyExpenditure(expenditure *model.DailyExpenditure) error {
 	// Perform any business logic or validation before creating the daily expenditure
 	// ...
-
+	isExist, err :=uc.userRepo.GetUserByID(expenditure.UserID)
+	if err != nil {
+		return  err
+	}
+	if isExist==nil {
+		return fmt.Errorf("silahkan login ulang")
+	}
 	return uc.dailyExpenditureRepo.CreateDailyExpenditure(expenditure)
 }
 

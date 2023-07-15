@@ -33,7 +33,7 @@ func (repo *dailyExpenditureRepository) GetTotalExpenditureByDateRange(startDate
 	var total float64
 	err := repo.db.QueryRow(`
         SELECT SUM(amount) FROM daily_expenditures
-        WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2
+        WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND is_active = true
     `, startDate, endDate).Scan(&total)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get total expenditure: %w", err)
@@ -164,7 +164,7 @@ func (repo *dailyExpenditureRepository) GetExpendituresByDateRange(startDate tim
 		SELECT d.id, d.user_id, u.username, d.amount, d.description, d.created_at, d.updated_at, d.date
 		FROM daily_expenditures d
 		JOIN users u ON d.user_id = u.id
-		WHERE d.date >= $1 AND d.date <= $2 AND d.is_active = true
+		WHERE DATE(d.created_at) >= $1 AND DATE(d.created_at) <= $2 AND d.is_active = true
 	`, startDate, endDate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get expenditures by date range: %w", err)
