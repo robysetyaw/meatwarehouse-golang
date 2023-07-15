@@ -103,7 +103,7 @@ func (repo *customerRepository) GetCustomerByName(customerName string) (*model.C
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil // customer not found
+			return nil, fmt.Errorf("notfoundcustomer %w", err)
 		}
 		return nil, fmt.Errorf("failed to get customer by name: %w", err)
 	}

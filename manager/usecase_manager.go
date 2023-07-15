@@ -14,6 +14,7 @@ type UsecaseManager interface {
 	GetReportUsecase() usecase.ReportUseCase
 	GetCustomerUsecase() usecase.CustomerUseCase
 	GetCompanyUsecase() usecase.CompanyUseCase
+	GetTransactionUseCase() usecase.TransactionUseCase
 }
 
 type usecaseManager struct {
@@ -26,6 +27,7 @@ type usecaseManager struct {
 	companyUsecase          usecase.CompanyUseCase
 	dailyExpenditureUsecase usecase.DailyExpenditureUseCase
 	reportUsecase           usecase.ReportUseCase
+	transactionUseCase      usecase.TransactionUseCase
 }
 
 var onceLoadUserUsecase sync.Once
@@ -35,6 +37,7 @@ var onceLoadCustomerUsecase sync.Once
 var onceLoadCompanyUsecase sync.Once
 var onceLoadDailyExpenditureUsecase sync.Once
 var onceLoadReportUsecase sync.Once
+var onceLoadTxUsecase sync.Once
 
 func (um *usecaseManager) GetUserUsecase() usecase.UserUseCase {
 	onceLoadUserUsecase.Do(func() {
@@ -81,6 +84,17 @@ func (um *usecaseManager) GetReportUsecase() usecase.ReportUseCase {
 		um.reportUsecase = usecase.NewReportUseCase(um.repoManager.GetDailyExpenditureRepo())
 	})
 	return um.reportUsecase
+}
+
+func (um *usecaseManager) GetTransactionUseCase() usecase.TransactionUseCase {
+	onceLoadTxUsecase.Do(func() {
+		um.transactionUseCase = usecase.NewTransactionUseCase(
+			um.repoManager.GetTransactionRepo(),
+			um.repoManager.GetCustomerRepo(),
+			um.repoManager.GetMeatRepo(),
+			um.repoManager.GetCompanyRepo())
+	})
+	return um.transactionUseCase
 }
 
 func NewUsecaseManager(repoManager RepoManager) UsecaseManager {

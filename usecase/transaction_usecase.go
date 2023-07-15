@@ -19,11 +19,17 @@ type TransactionUseCase interface {
 
 type transactionUseCase struct {
 	transactionRepo repository.TransactionRepository
+	customerRepo repository.CustomerRepository
+	meatRepo repository.MeatRepository
+	companyRepo repository.CompanyRepository
 }
 
-func NewTransactionUseCase(transactionRepo repository.TransactionRepository) TransactionUseCase {
+func NewTransactionUseCase(transactionRepo repository.TransactionRepository, customerRepo repository.CustomerRepository, meatRepo repository.MeatRepository, companyRepo repository.CompanyRepository) TransactionUseCase {
 	return &transactionUseCase{
 		transactionRepo: transactionRepo,
+		customerRepo: customerRepo,
+		meatRepo: meatRepo,
+		companyRepo: companyRepo,
 	}
 }
 
@@ -35,16 +41,54 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		return err
 	}
 
+	customer, err := uc.customerRepo.GetCustomerByName(transaction.Name)
+	if err != nil {
+		return fmt.Errorf("failed to get customer by name: %w", err)
+	}
+
+	company, err := uc.companyRepo.GetCompanyById(customer.CompanyId)
+	if err != nil {
+		return fmt.Errorf("failed to get customer by name: %w", err)
+	}
+
 	invoiceNumber := fmt.Sprintf("INV-%s-%04d", today, number )
 	transaction.ID = common.UuidGenerate()
 	transaction.IsActive = true
 	transaction.CreatedAt = time.Now()
 	transaction.UpdatedAt = time.Now()
 	transaction.InvoiceNumber = invoiceNumber
-
+	transaction.CustomerID = customer.Id
+	transaction.Address =	customer.Address
+	transaction.PhoneNumber = customer.PhoneNumber
+	transaction.Company = company.CompanyName
+	transaction.CreatedBy = "admin"
+	transaction.UpdatedBy = "admin"	
 	// Perform any business logic or validation before creating the transaction
 	// ...
 
+	for _, detail := range transaction.TransactionDetails {
+	meat,err := uc.meatRepo.GetMeatByName(detail.MeatName)
+	if err != nil {
+		return err
+	}
+	if meat ==nil {
+		return fmt.Errorf("meat name %s not found", meat.Name)
+	}
+	detail.ID = common.UuidGenerate()
+	detail.MeatID = meat.ID
+	detail.TransactionID = transaction.ID
+
+	if detail.Qty >= meat.Stock {
+		return fmt.Errorf("insufficient stock for %s", detail.MeatName)
+	}
+	err	= uc.meatRepo.ReduceStock(meat.ID, detail.Qty)
+	if err != nil {
+		return err
+	}
+	}
+
+	uc.UpdateTotalTransaction(transaction)
+	transaction.CalulatedTotal()
 	// Create transaction header
 	if err := uc.transactionRepo.CreateTransactionHeader(transaction); err != nil {
 		return fmt.Errorf("failed to create transaction: %w", err)
@@ -67,4 +111,10 @@ func (uc *transactionUseCase) GetTransactionByID(id string) (*model.TransactionH
 
 func (uc *transactionUseCase) DeleteTransaction(id string) error {
 	return uc.transactionRepo.DeleteTransaction(id)
+}
+
+func (uc *transactionUseCase) UpdateTotalTransaction(transaction *model.TransactionHeader) {
+	for _, detail := range transaction.TransactionDetails{
+		detail.Total = detail.Price * detail.Qty
+	} 
 }

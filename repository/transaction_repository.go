@@ -29,25 +29,37 @@ func NewTransactionRepository(db *sql.DB) TransactionRepository {
 }
 
 func (repo *transactionRepository) CreateTransactionHeader(header *model.TransactionHeader) error {
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return err
+	}
 	now := time.Now()
 	header.CreatedAt = now
 	header.UpdatedAt = now
+	header.IsActive = true
 
-	// Perform database insert operation for transaction header
-	_, err := repo.db.Exec(`
-		INSERT INTO transaction_headers (id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, invoice_number)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-	`, header.ID, header.Date, header.CustomerID, header.Name, header.Address, header.Company, header.PhoneNumber, header.TxType, header.Total, header.IsActive, header.CreatedAt, header.UpdatedAt, header.CreatedBy, header.UpdatedBy, header.InvoiceNumber)
+	query := "INSERT INTO transaction_headers (id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, inv_number) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id"
+	err = tx.QueryRow(query,header.ID, header.Date, header.CustomerID, header.Name, header.Address, header.Company, header.PhoneNumber, header.TxType, header.Total, header.IsActive, header.CreatedAt, header.UpdatedAt, header.CreatedBy, header.UpdatedBy, header.InvoiceNumber).Scan(&header.ID)
 	if err != nil {
+		// tx.Rollback()
 		return fmt.Errorf("failed to create transaction header: %w", err)
 	}
 
 	// Create transaction details
+	query = "INSERT INTO transaction_details (id,transaction_id, meat_id, meat_name, qty, price, total, is_active, created_at, updated_at, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)"
 	for _, detail := range header.TransactionDetails {
-		err := repo.CreateTransactionDetail(header.ID, detail)
+		_, err := tx.Exec(query,detail.ID, header.ID, detail.MeatID, detail.MeatName, detail.Qty, detail.Price, detail.Total, header.IsActive, detail.CreatedAt, detail.UpdatedAt, header.CreatedBy, header.CreatedBy)
 		if err != nil {
+			// tx.Rollback()
 			return fmt.Errorf("failed to create transaction detail: %w", err)
 		}
+	}
+
+	updateQuery := "UPDATE transaction_headers SET total = $1 WHERE id = $2"
+	_, err = tx.Exec(updateQuery, header.Total, header.ID)
+	if err != nil {
+		// tx.Rollback()
+		return err
 	}
 
 	return nil
@@ -77,7 +89,7 @@ func (repo *transactionRepository) GetTransactionByID(id string) (*model.Transac
 
 	// Get transaction header from database
 	err := repo.db.QueryRow(`
-		SELECT id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, invoice_number
+		SELECT id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, inv_number
 		FROM transaction_headers
 		WHERE id = $1 AND is_active
 	`, id).Scan(
@@ -148,7 +160,7 @@ func (repo *transactionRepository) GetTransactionByID(id string) (*model.Transac
 func (repo *transactionRepository) GetAllTransactions() ([]*model.TransactionHeader, error) {
 	// Perform database query to retrieve all active transactions
 	rows, err := repo.db.Query(`
-		SELECT id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, invoice_number
+		SELECT id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, inv_number
 		FROM transaction_headers
 		WHERE is_active = true
 	`)
@@ -208,10 +220,10 @@ func (repo *transactionRepository) DeleteTransaction(id string) error {
 func (repo *transactionRepository) CountTransactions() (int, error) {
 	var count int
 
-	err := repo.db.QueryRow("SELECT COUNT(*) FROM transactions").Scan(&count)
+	err := repo.db.QueryRow("SELECT COUNT(*) FROM transaction_headers").Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count transactions: %w", err)
 	}
 
-	return count, nil
+	return count+1, nil
 }

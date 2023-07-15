@@ -36,7 +36,7 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 
 	err := tc.transactionUseCase.CreateTransaction(&request)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create transaction"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

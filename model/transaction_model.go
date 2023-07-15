@@ -35,3 +35,12 @@ type TransactionDetail struct {
 	CreatedBy     string    `json:"created_by"`
 	UpdatedBy     string    `json:"updated_by"`
 }
+
+func (h *TransactionHeader) CalulatedTotal() {
+	total := 0.0
+	for _, detail := range h.TransactionDetails {
+		detail.Total = detail.Price * detail.Qty
+		total += detail.Total
+	}
+	h.Total = total
+}

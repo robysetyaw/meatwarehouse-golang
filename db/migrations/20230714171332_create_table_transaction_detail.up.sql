@@ -1,7 +1,7 @@
 CREATE TABLE transaction_details (
-    id SERIAL PRIMARY KEY,
-    transaction_id INTEGER,
-    meat_id INTEGER,
+    id VARCHAR PRIMARY KEY,
+    transaction_id VARCHAR,
+    meat_id VARCHAR,
     meat_name TEXT,
     qty NUMERIC,
     price NUMERIC,
