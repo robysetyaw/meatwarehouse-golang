@@ -2,9 +2,10 @@ package repository
 
 import (
 	"database/sql"
-	"time"
-	"fmt"
 	"errors"
+	"fmt"
+	"time"
+
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 )
 
@@ -12,7 +13,7 @@ type MeatRepository interface {
 	CreateMeat(meat *model.Meat) error
 	GetMeatByID(string) (*model.Meat, error)
 	GetAllMeats() ([]*model.Meat, error)
-	GetMeatByName(string)(*model.Meat, error)
+	GetMeatByName(string) (*model.Meat, error)
 	UpdateMeat(meat *model.Meat) error
 	DeleteMeat(string) error
 	ReduceStock(meatID string, qty float64) error
@@ -88,7 +89,7 @@ func (r *meatRepository) GetMeatByName(name string) (*model.Meat, error) {
 	err := r.db.QueryRow(query, name).Scan(&meat.ID, &meat.Name, &meat.Stock, &meat.Price, &meat.IsActive, &meat.CreatedAt, &meat.UpdatedAt, &meat.CreatedBy, &meat.UpdatedBy)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil // Meat not found
+			return nil, fmt.Errorf("Not Found") // Meat not found
 		}
 		return nil, fmt.Errorf("failed to get meat by meatname: %v", err)
 	}
@@ -159,7 +160,7 @@ func (r *meatRepository) UpdateMeat(meat *model.Meat) error {
 
 func (r *meatRepository) ReduceStock(meatID string, qty float64) error {
 	query := "UPDATE meats SET stock = stock - $1 WHERE id = $2"
-	_, err := r.db.Exec(query, qty,meatID)
+	_, err := r.db.Exec(query, qty, meatID)
 	if err != nil {
 		return err
 	}
@@ -169,7 +170,7 @@ func (r *meatRepository) ReduceStock(meatID string, qty float64) error {
 
 func (r *meatRepository) IncreaseStock(meatID string, qty float64) error {
 	query := "UPDATE meats SET stock = stock + $1 WHERE id = $2"
-	_, err := r.db.Exec(query, qty,meatID)
+	_, err := r.db.Exec(query, qty, meatID)
 	if err != nil {
 		return err
 	}

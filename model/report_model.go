@@ -19,3 +19,21 @@ type DailyExpenditureReport struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 	Date        string    `json:"date"`
 }
+
+type TransactionReport struct {
+	StartDate           time.Time
+	EndDate             time.Time
+	TotalInTransaction  float64
+	TotalOutTransaction float64
+	Report              []*TransactionReportDetail
+}
+
+type TransactionReportDetail struct {
+	InvoiceNumber       string
+	CustomerName        string
+	CompanyName         string
+	PhoneNumberCustomer string
+	TxType              string
+	Qty                 float64
+	Total               float64
+}
