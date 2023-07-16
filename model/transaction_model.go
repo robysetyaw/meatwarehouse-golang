@@ -4,7 +4,7 @@ import "time"
 
 type TransactionHeader struct {
 	ID                 string               `json:"id"`
-	Date               string            `json:"date"`
+	Date               string               `json:"date"`
 	InvoiceNumber      string               `json:"invoice_number"`
 	CustomerID         string               `json:"customer_id"`
 	Name               string               `json:"name"`
@@ -12,6 +12,8 @@ type TransactionHeader struct {
 	Company            string               `json:"company"`
 	PhoneNumber        string               `json:"phone_number"`
 	TxType             string               `json:"tx_type"`
+	PaymentStatus      string               `json:"payment_status"`
+	PaymentAmount      float64              `json:"payment_amount"`
 	Total              float64              `json:"total"`
 	IsActive           bool                 `json:"is_active"`
 	CreatedAt          time.Time            `json:"created_at"`

@@ -20,7 +20,8 @@ func NewTransactionController(r *gin.Engine, transactionUseCase usecase.Transact
 	}
 
 	r.POST("/transactions", middleware.JWTAuthMiddleware(), controller.CreateTransaction)
-	r.GET("/transactions/:id", middleware.JWTAuthMiddleware(), controller.GetTransactionByID)
+	// r.GET("/transactions/:id", middleware.JWTAuthMiddleware(), controller.GetTransactionByID)
+	r.GET("/transactions/:invoice_number", middleware.JWTAuthMiddleware(), controller.GetTransactionByInvoiceNumber)
 	r.GET("/transactions", middleware.JWTAuthMiddleware(), controller.GetAllTransactions)
 	r.DELETE("/transactions/:id", middleware.JWTAuthMiddleware(), controller.DeleteTransaction)
 
@@ -75,4 +76,16 @@ func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Transaction deleted successfully"})
+}
+
+func (tc *TransactionController) GetTransactionByInvoiceNumber(c *gin.Context) {
+	invoice_number := c.Param("invoice_number")
+
+	transaction, err := tc.transactionUseCase.GetTransactionByInvoiceNumber(invoice_number)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, transaction)
 }

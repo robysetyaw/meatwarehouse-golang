@@ -14,6 +14,7 @@ type TransactionUseCase interface {
 	GetAllTransactions() ([]*model.TransactionHeader, error)
 	GetTransactionByID(id string) (*model.TransactionHeader, error)
 	DeleteTransaction(id string) error
+	GetTransactionByInvoiceNumber(inv_number string) (*model.TransactionHeader, error)
 }
 
 type transactionUseCase struct {
@@ -128,4 +129,13 @@ func (uc *transactionUseCase) UpdateTotalTransaction(transaction *model.Transact
 	for _, detail := range transaction.TransactionDetails {
 		detail.Total = detail.Price * detail.Qty
 	}
+}
+
+func (uc *transactionUseCase) GetTransactionByInvoiceNumber(inv_number string) (*model.TransactionHeader, error) {
+	transaction, err := uc.transactionRepo.GetByInvoiceNumber(inv_number)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transaction: %w", err)
+	}
+
+	return transaction, nil
 }

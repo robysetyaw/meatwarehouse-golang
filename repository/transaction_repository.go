@@ -14,7 +14,8 @@ type TransactionRepository interface {
 	GetAllTransactions() ([]*model.TransactionHeader, error)
 	DeleteTransaction(id string) error
 	CountTransactions() (int, error)
-
+	GetByInvoiceNumber(invoice_number string) (*model.TransactionHeader, error)
+	UpdateStatusInvoicePaid(id string) error
 }
 
 type transactionRepository struct {
@@ -71,7 +72,7 @@ func (repo *transactionRepository) GetTransactionByID(id string) (*model.Transac
 	err := repo.db.QueryRow(`
 		SELECT id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, inv_number
 		FROM transaction_headers
-		WHERE id = $1 AND is_active
+		WHERE id = $1 AND is_active = true
 	`, id).Scan(
 		&transaction.ID,
 		&transaction.Date,
@@ -207,3 +208,90 @@ func (repo *transactionRepository) CountTransactions() (int, error) {
 
 	return count+1, nil
 }
+
+func (repo *transactionRepository) GetByInvoiceNumber(invoice_number string) (*model.TransactionHeader, error){
+	var transaction model.TransactionHeader
+
+	// Get transaction header from database
+	err := repo.db.QueryRow(`
+		SELECT id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, inv_number
+		FROM transaction_headers
+		WHERE inv_number = $1 AND is_active
+	`, invoice_number).Scan(
+		&transaction.ID,
+		&transaction.Date,
+		&transaction.CustomerID,
+		&transaction.Name,
+		&transaction.Address,
+		&transaction.Company,
+		&transaction.PhoneNumber,
+		&transaction.TxType,
+		&transaction.Total,
+		&transaction.IsActive,
+		&transaction.CreatedAt,
+		&transaction.UpdatedAt,
+		&transaction.CreatedBy,
+		&transaction.UpdatedBy,
+		&transaction.InvoiceNumber,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // Return nil if transaction header not found
+		}
+		return nil, fmt.Errorf("failed to get transaction header by ID: %w", err)
+	}
+
+	// Get transaction details from database
+	rows, err := repo.db.Query(`
+		SELECT id, transaction_id, meat_id, meat_name, qty, price, total, is_active, created_at, updated_at, created_by, updated_by
+		FROM transaction_details
+		WHERE transaction_id = $1 AND is_active = true
+	`, transaction.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transaction details: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var detail model.TransactionDetail
+		err := rows.Scan(
+			&detail.ID,
+			&detail.TransactionID,
+			&detail.MeatID,
+			&detail.MeatName,
+			&detail.Qty,
+			&detail.Price,
+			&detail.Total,
+			&detail.IsActive,
+			&detail.CreatedAt,
+			&detail.UpdatedAt,
+			&detail.CreatedBy,
+			&detail.UpdatedBy,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction detail row: %w", err)
+		}
+
+		transaction.TransactionDetails = append(transaction.TransactionDetails, &detail)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred while iterating over transaction detail rows: %w", err)
+	}
+
+	return &transaction, nil	
+}
+
+func (repo *transactionRepository) UpdateStatusInvoicePaid(id string) error {
+	_, err := repo.db.Exec(`
+		UPDATE transaction_headers
+		SET payment_status = 'paid'
+		WHERE id = $1
+	`, id)
+	if err != nil {
+		return fmt.Errorf("failed to update transaction: %w", err)
+	}
+
+	return nil
+}
+
