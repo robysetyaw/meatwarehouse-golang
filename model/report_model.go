@@ -28,12 +28,19 @@ type TransactionReport struct {
 	Report              []*TransactionReportDetail
 }
 
+type TransactionReportOut struct {
+	StartDate  time.Time
+	EndDate    time.Time
+	SalesTotal float64
+	Report     []*TransactionReportDetail
+}
+
 type TransactionReportDetail struct {
 	InvoiceNumber       string
+	Date                string
 	CustomerName        string
 	CompanyName         string
 	PhoneNumberCustomer string
 	TxType              string
-	Qty                 float64
 	Total               float64
 }

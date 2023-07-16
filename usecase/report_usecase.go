@@ -10,6 +10,7 @@ import (
 type ReportUseCase interface {
 	GenerateExpenditureReport(startDate time.Time, endDate time.Time) (*model.ExpenditureReport, error)
 	GenerateReport(startDate time.Time, endDate time.Time) (*model.TransactionReport, error)
+	GenerateSalesReport(startDate time.Time, endDate time.Time) (*model.TransactionReportOut, error)
 }
 
 type reportUseCase struct {
@@ -98,6 +99,41 @@ func (uc *reportUseCase) GenerateReport(startDate time.Time, endDate time.Time) 
 		detailReport := &model.TransactionReportDetail{
 			InvoiceNumber:       detTransaction.InvoiceNumber,
 			CustomerName:        detTransaction.Name,
+			CompanyName:         detTransaction.Company,
+			PhoneNumberCustomer: detTransaction.PhoneNumber,
+			TxType:              detTransaction.TxType,
+			Total:               detTransaction.Total,
+		}
+		reportTransaction.Report = append(reportTransaction.Report, detailReport)
+	}
+
+	return reportTransaction, nil
+}
+
+func (uc *reportUseCase) GenerateSalesReport(startDate time.Time, endDate time.Time) (*model.TransactionReportOut, error) {
+	tx_type := "out"
+
+	transaction, err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate, endDate, tx_type)
+	if err != nil {
+		return nil, err
+	}
+	total, err := uc.transactionRepo.CountIncomeTransactions()
+	if err != nil {
+		return nil, err
+	}
+
+	reportTransaction := &model.TransactionReportOut{
+		StartDate:           startDate,
+		EndDate:             endDate,
+		SalesTotal: total,
+		Report:              []*model.TransactionReportDetail{},
+	}
+
+	for _, detTransaction := range transaction {
+		detailReport := &model.TransactionReportDetail{
+			InvoiceNumber:       detTransaction.InvoiceNumber,
+			CustomerName:        detTransaction.Name,
+			Date:                detTransaction.Date,
 			CompanyName:         detTransaction.Company,
 			PhoneNumberCustomer: detTransaction.PhoneNumber,
 			TxType:              detTransaction.TxType,

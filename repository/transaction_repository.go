@@ -20,6 +20,7 @@ type TransactionRepository interface {
 	GetByInvoiceNumber(invoice_number string) (*model.TransactionHeader, error)
 	UpdateStatusInvoicePaid(id string) error
 	UpdateStatusPaymentAmount(id string,total float64 ) error
+	GetTransactionByRangeDateWithTxType(startDate time.Time, endDate time.Time, tx_type string) ([]*model.TransactionHeader, error)
 }
 
 type transactionRepository struct {
@@ -381,3 +382,49 @@ func (repo *transactionRepository) UpdateStatusPaymentAmount(id string,total flo
 	return nil
 }
 
+func (repo *transactionRepository) GetTransactionByRangeDateWithTxType(startDate time.Time, endDate time.Time, tx_type string) ([]*model.TransactionHeader, error) {
+
+	rows, err := repo.db.Query(`
+		SELECT id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, inv_number
+		FROM transaction_headers
+		WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND is_active = true AND tx_type = $3
+	`, startDate, endDate, tx_type)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all transactions: %w", err)
+	}
+	defer rows.Close()
+
+	// Iterate over the rows and scan the results into TransactionHeader objects
+	transactions := make([]*model.TransactionHeader, 0)
+	for rows.Next() {
+		var transaction model.TransactionHeader
+		err := rows.Scan(
+			&transaction.ID,
+			&transaction.Date,
+			&transaction.CustomerID,
+			&transaction.Name,
+			&transaction.Address,
+			&transaction.Company,
+			&transaction.PhoneNumber,
+			&transaction.TxType,
+			&transaction.Total,
+			&transaction.IsActive,
+			&transaction.CreatedAt,
+			&transaction.UpdatedAt,
+			&transaction.CreatedBy,
+			&transaction.UpdatedBy,
+			&transaction.InvoiceNumber,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction header row: %w", err)
+		}
+
+		transactions = append(transactions, &transaction)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred while iterating over transaction header rows: %w", err)
+	}
+
+	return transactions, nil
+}
