@@ -84,7 +84,7 @@ func (um *usecaseManager) GetDailyExpenditureUsecase() usecase.DailyExpenditureU
 
 func (um *usecaseManager) GetReportUsecase() usecase.ReportUseCase {
 	onceLoadReportUsecase.Do(func() {
-		um.reportUsecase = usecase.NewReportUseCase(um.repoManager.GetDailyExpenditureRepo())
+		um.reportUsecase = usecase.NewReportUseCase(um.repoManager.GetDailyExpenditureRepo(), um.repoManager.GetTransactionRepo())
 	})
 	return um.reportUsecase
 }
