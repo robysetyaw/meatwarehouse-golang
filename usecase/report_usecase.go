@@ -12,6 +12,7 @@ type ReportUseCase interface {
 	GenerateReport(startDate time.Time, endDate time.Time) (*model.TransactionReport, error)
 	GenerateSalesReport(startDate time.Time, endDate time.Time) (*model.SalesReportOut, error)
 	GenerateReceiptReport(startDate time.Time, endDate time.Time) (*model.ReceiptReport, error)
+	GenerateDebtAccountsPayableReport(startDate time.Time, endDate time.Time) (*model.DebtAccountsPayableReport, error)
 }
 
 type reportUseCase struct {
@@ -179,6 +180,68 @@ func (uc *reportUseCase) GenerateReceiptReport(startDate time.Time, endDate time
 			DebtTotal:           debt,
 		}
 		reportTransaction.Report = append(reportTransaction.Report, detailReport)
+	}
+	return reportTransaction, nil
+}
+
+func (uc *reportUseCase) GenerateDebtAccountsPayableReport(startDate time.Time, endDate time.Time) (*model.DebtAccountsPayableReport, error) {
+	tx_type := "out"
+	status := "unpaid"
+	transactionIn, err := uc.transactionRepo.GetTransactionByRangeDateWithTxTypeAndPaid(startDate, endDate, tx_type, status)
+	if err != nil {
+		return nil, err
+	}
+
+	totalIn, err := uc.transactionRepo.SumIncomeTransactionsWithType(startDate, endDate, tx_type)
+	if err != nil {
+		return nil, err
+	}
+	tx_type = "in"
+	transactionOut, err := uc.transactionRepo.GetTransactionByRangeDateWithTxTypeAndPaid(startDate, endDate, tx_type, status)
+	if err != nil {
+		return nil, err
+	}
+	totalOut, err := uc.transactionRepo.SumIncomeTransactionsWithType(startDate, endDate, tx_type)
+	if err != nil {
+		return nil, err
+	}
+	reportTransaction := &model.DebtAccountsPayableReport{
+		StartDate:        startDate,
+		EndDate:          endDate,
+		ReceivablesTotal: totalOut,
+		DebtTotal:        totalIn,
+		Receivables:      []*model.DebtAccountsPayableReportDetail{},
+		Debt:             []*model.DebtAccountsPayableReportDetail{},
+	}
+	for i, detTransaction := range transactionIn {
+		debt := detTransaction.Total - detTransaction.PaymentAmount
+		detailReport := &model.DebtAccountsPayableReportDetail{
+			No:                  i + 1,
+			InvoiceNumber:       detTransaction.InvoiceNumber,
+			CustomerName:        detTransaction.Name,
+			Date:                detTransaction.Date,
+			CompanyName:         detTransaction.Company,
+			PhoneNumberCustomer: detTransaction.PhoneNumber,
+			TxType:              detTransaction.TxType,
+			PaymentStatus:       detTransaction.PaymentStatus,
+			Debt:                debt,
+		}
+		reportTransaction.Receivables = append(reportTransaction.Receivables, detailReport)
+	}
+	for i, detTransaction := range transactionOut {
+		debt := detTransaction.Total - detTransaction.PaymentAmount
+		detailReport := &model.DebtAccountsPayableReportDetail{
+			No:                  i + 1,
+			InvoiceNumber:       detTransaction.InvoiceNumber,
+			CustomerName:        detTransaction.Name,
+			Date:                detTransaction.Date,
+			CompanyName:         detTransaction.Company,
+			PhoneNumberCustomer: detTransaction.PhoneNumber,
+			TxType:              detTransaction.TxType,
+			PaymentStatus:       detTransaction.PaymentStatus,
+			Debt:                debt,
+		}
+		reportTransaction.Debt = append(reportTransaction.Debt, detailReport)
 	}
 	return reportTransaction, nil
 }

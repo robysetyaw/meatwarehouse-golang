@@ -16,7 +16,7 @@ migrate  -database "postgres://postgres:(pass)@localhost:5432/meatwarehouse?sslm
 	Laporan ini akan menampilkan total penerimaan dari transaksi pembayaran yang dilakukan. Dapat dihasilkan dengan menjumlahkan total penerimaan (payment_amount) dari semua entri transaksi dengan payment_status yang sesuai (misalnya, "paid") dan mengelompokkannya berdasarkan tanggal (date) atau pelanggan (customer_id). (tx_type = out, paid, payment_amount)
 
 3. Laporan Utang (Debt/Accounts Payable Report)
-	Laporan ini akan memberikan gambaran tentang utang yang masih harus dibayar. Dapat dihasilkan dengan menjumlahkan total utang (total - payment_amount) dari semua entri transaksi dengan payment_status yang sesuai (misalnya, "unpaid") dan mengelompokkannya berdasarkan tanggal (date) atau pelanggan (customer_id). (tx_type = in, unpaid, total-payment_amount)
+	Laporan ini akan memberikan gambaran tentang utang yang masih harus dibayar. Dapat dihasilkan dengan menjumlahkan total utang (total - payment_amount) dari semua entri transaksi dengan payment_status yang sesuai (misalnya, "unpaid") dan mengelompokkannya berdasarkan tanggal (date) atau pelanggan (customer_id). (tx_type = in, unpaid, total-payment_amount) receivables debt
 
 4. Laporan Laba Rugi (Profit and Loss Statement/Income Statement)
 	Laporan ini akan menghitung laba atau rugi bersih berdasarkan total pendapatan (penjualan) dikurangi dengan total biaya atau pengeluaran. Untuk menghasilkan laporan ini, perlu melibatkan tabel lain yang berisi rincian biaya atau pengeluaran yang terkait dengan transaksi tersebut. (total_out-(total_in + daily_expenditures), tx_in, tx_out, daily_expenditures)

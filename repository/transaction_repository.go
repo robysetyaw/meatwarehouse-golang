@@ -436,7 +436,7 @@ func (repo *transactionRepository) GetTransactionByRangeDateWithTxType(startDate
 func (repo *transactionRepository) GetTransactionByRangeDateWithTxTypeAndPaid(startDate time.Time, endDate time.Time, tx_type, payment_status string) ([]*model.TransactionHeader, error) {
 
 	rows, err := repo.db.Query(`
-		SELECT id, date, customer_id, name, address, company, phone_number, tx_type, total, payment_status ,is_active, created_at, updated_at, created_by, updated_by, inv_number
+		SELECT id, date, customer_id, name, address, company, phone_number, tx_type, total, payment_status ,is_active, created_at, updated_at, created_by, updated_by, inv_number, payment_amount, payment_status
 		FROM transaction_headers
 		WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND is_active = true AND tx_type = $3 AND payment_status = $4 order by created_at ASC
 	`, startDate, endDate, tx_type, payment_status)
@@ -466,6 +466,8 @@ func (repo *transactionRepository) GetTransactionByRangeDateWithTxTypeAndPaid(st
 			&transaction.CreatedBy,
 			&transaction.UpdatedBy,
 			&transaction.InvoiceNumber,
+			&transaction.PaymentAmount,
+			&transaction.PaymentStatus,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan transaction header row: %w", err)
@@ -481,7 +483,7 @@ func (repo *transactionRepository) GetTransactionByRangeDateWithTxTypeAndPaid(st
 	return transactions, nil
 }
 
-func (repo *transactionRepository) SumIncomeTransactionsWithType (startDate time.Time, endDate time.Time, tx_type string) (float64, error) {
+func (repo *transactionRepository) SumIncomeTransactionsWithType(startDate time.Time, endDate time.Time, tx_type string) (float64, error) {
 	var income float64
 
 	err := repo.db.QueryRow("SELECT SUM(payment_amount) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = $3", startDate,endDate,tx_type).Scan(&income)

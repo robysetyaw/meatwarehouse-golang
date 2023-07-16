@@ -54,3 +54,24 @@ type TransactionReportDetail struct {
 	PaymentStatus       string
 	DebtTotal           float64
 }
+
+type DebtAccountsPayableReport struct {
+	StartDate        time.Time
+	EndDate          time.Time
+	ReceivablesTotal float64
+	DebtTotal        float64
+	Receivables      []*DebtAccountsPayableReportDetail
+	Debt             []*DebtAccountsPayableReportDetail
+}
+
+type DebtAccountsPayableReportDetail struct {
+	No                  int
+	InvoiceNumber       string
+	Date                string
+	CustomerName        string
+	CompanyName         string
+	PhoneNumberCustomer string
+	TxType              string
+	PaymentStatus       string
+	Debt                float64
+}
