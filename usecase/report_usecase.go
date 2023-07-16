@@ -14,6 +14,7 @@ type ReportUseCase interface {
 	GenerateReceiptReport(startDate time.Time, endDate time.Time) (*model.ReceiptReport, error)
 	GenerateDebtAccountsPayableReport(startDate time.Time, endDate time.Time) (*model.DebtAccountsPayableReport, error)
 	GenerateProfitLossStatement(startDate time.Time, endDate time.Time) (*model.ProfitAndLossStatement, error)
+	GenerateCashFlowStatement(startDate time.Time, endDate time.Time) (*model.CashFlowStatement, error)
 }
 
 type reportUseCase struct {
@@ -333,4 +334,93 @@ func (uc *reportUseCase) GenerateProfitLossStatement(startDate time.Time, endDat
 		PnL.Expenditures = append(PnL.Expenditures, dailyReport)
 	}
 	return PnL, nil
+}
+
+func (uc *reportUseCase) GenerateCashFlowStatement(startDate time.Time, endDate time.Time) (*model.CashFlowStatement, error) {
+	tx_type := "in"
+	totalCashOut, err := uc.transactionRepo.SumIncomeTransactionsWithType(startDate, endDate, tx_type)
+	if err != nil {
+		return nil, err
+	}
+	paymentIn,err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate,endDate,tx_type)
+	if err != nil {
+		return nil, err
+	}
+	tx_type = "out"
+	totalCashIn, err := uc.transactionRepo.SumIncomeTransactionsWithType(startDate, endDate, tx_type)
+	if err != nil {
+		return nil, err
+	}
+	paymentOut,err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate,endDate,tx_type)
+	if err != nil {
+		return nil, err
+	}
+
+	totalExpenditure, err := uc.dailyExpenditureRepo.GetTotalExpenditureByDateRange(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	expenditures, err := uc.dailyExpenditureRepo.GetExpendituresByDateRange(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	
+
+	reportTransaction := &model.CashFlowStatement{
+		StartDate:        startDate,
+		EndDate:          endDate,
+		TotalPaymentIn:   totalCashIn,
+		TotalPaymentOut:  totalCashOut,
+		TotalExpenditure: totalExpenditure,
+		Cash:             totalCashIn - (totalExpenditure + totalCashOut),
+		PaymentIn:        []*model.TransactionReportDetail{},
+		PaymentOut:       []*model.TransactionReportDetail{},
+		Expenditure:      []*model.DailyExpenditureReport{},
+	}
+
+	for i, s := range paymentIn {
+		detailReport := &model.TransactionReportDetail{
+			No:                  i + 1,
+			InvoiceNumber:       s.InvoiceNumber,
+			Date:                s.Date,
+			CustomerName:        s.Name,
+			CompanyName:         s.Company,
+			PhoneNumberCustomer: s.PhoneNumber,
+			TxType:              s.TxType,
+			Total:               s.Total,
+		}
+		reportTransaction.PaymentIn = append(reportTransaction.PaymentIn, detailReport)
+	}
+	for i, ti := range paymentOut {
+		detailTransactionIn := &model.TransactionReportDetail{
+			No:                  i + 1,
+			InvoiceNumber:       ti.InvoiceNumber,
+			Date:                ti.Date,
+			CustomerName:        ti.Name,
+			CompanyName:         ti.Company,
+			PhoneNumberCustomer: ti.PhoneNumber,
+			TxType:              ti.TxType,
+			Total:               ti.Total,
+		}
+		reportTransaction.PaymentOut = append(reportTransaction.PaymentOut, detailTransactionIn)
+	}
+	for i, expenditure := range expenditures {
+		dailyReport := &model.DailyExpenditureReport{
+			No:          i,
+			ID:          expenditure.ID,
+			UserID:      expenditure.UserID,
+			Username:    expenditure.Username,
+			Amount:      expenditure.Amount,
+			Description: expenditure.Description,
+			CreatedAt:   expenditure.CreatedAt,
+			UpdatedAt:   expenditure.UpdatedAt,
+			Date:        expenditure.Date,
+		}
+
+		reportTransaction.Expenditure = append(reportTransaction.Expenditure, dailyReport)
+	}
+	return reportTransaction, nil
+
+	return reportTransaction, nil
 }

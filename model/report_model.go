@@ -43,6 +43,18 @@ type ReceiptReport struct {
 	Report       []*TransactionReportDetail
 }
 
+type CashFlowStatement struct {
+	StartDate        time.Time
+	EndDate          time.Time
+	Cash             float64
+	TotalPaymentIn   float64
+	TotalPaymentOut  float64
+	TotalExpenditure float64
+	PaymentIn        []*TransactionReportDetail
+	PaymentOut       []*TransactionReportDetail
+	Expenditure      []*DailyExpenditureReport
+}
+
 type TransactionReportDetail struct {
 	No                  int
 	InvoiceNumber       string
