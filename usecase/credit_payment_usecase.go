@@ -2,9 +2,11 @@ package usecase
 
 import (
 	"fmt"
+	"time"
 
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/repository"
+	"enigmacamp.com/final-project/team-4/track-prosto/utils/common"
 )
 
 type CreditPaymentUseCase interface {
@@ -28,6 +30,14 @@ func NewCreditPaymentUseCase(creditPaymentRepo repository.CreditPaymentRepositor
 func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment) error {
 	// Validasi atau logika bisnis sebelum membuat pembayaran kredit
 	// ...
+	createdat := time.Now()
+	todayDate := time.Now().Format("2006-01-02")
+	payment.ID = common.UuidGenerate()
+	payment.PaymentDate = todayDate
+	payment.CreatedAt = createdat
+	payment.UpdatedAt = createdat
+	payment.CreatedBy = "admin"
+	payment.UpdatedBy = "admin"
 	transaction,err := uc.transactionRepo.GetByInvoiceNumber(payment.InvoiceNumber)
 	if err != nil {
 		return err
@@ -39,7 +49,7 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 		return fmt.Errorf("invoice Already Paid")
 	}
 	totalCredit, err := uc.creditPaymentRepo.GetTotalCredit(payment.InvoiceNumber)
-
+	uc.transactionRepo.UpdateStatusPaymentAmount(transaction.ID,totalCredit)
 	if err != nil {
 		return  err
 	}

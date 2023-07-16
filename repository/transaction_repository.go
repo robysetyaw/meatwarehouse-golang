@@ -16,6 +16,7 @@ type TransactionRepository interface {
 	CountTransactions() (int, error)
 	GetByInvoiceNumber(invoice_number string) (*model.TransactionHeader, error)
 	UpdateStatusInvoicePaid(id string) error
+	UpdateStatusPaymentAmount(id string,total float64 ) error
 }
 
 type transactionRepository struct {
@@ -288,6 +289,19 @@ func (repo *transactionRepository) UpdateStatusInvoicePaid(id string) error {
 		SET payment_status = 'paid'
 		WHERE id = $1
 	`, id)
+	if err != nil {
+		return fmt.Errorf("failed to update transaction: %w", err)
+	}
+
+	return nil
+}
+
+func (repo *transactionRepository) UpdateStatusPaymentAmount(id string,total float64 ) error {
+	_, err := repo.db.Exec(`
+		UPDATE transaction_headers
+		SET payment_amount = $1
+		WHERE id = $2
+	`, total, id)
 	if err != nil {
 		return fmt.Errorf("failed to update transaction: %w", err)
 	}
