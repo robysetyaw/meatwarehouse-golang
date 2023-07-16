@@ -104,6 +104,10 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	transaction.CalulatedTotal()
 	newTotal := uc.UpdateTotalTransaction(transaction)
 	
+	if transaction.PaymentAmount>newTotal {
+		return fmt.Errorf("amount is large than total transaction")
+	}
+
 	if newTotal > transaction.PaymentAmount {
 		transaction.PaymentStatus = "unpaid"
 	}
@@ -118,6 +122,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		CreatedBy: transaction.CreatedBy,
 		UpdatedBy: transaction.CreatedBy,
 	})
+	
 	// Create transaction header
 	if err := uc.transactionRepo.CreateTransactionHeader(transaction); err != nil {
 		return fmt.Errorf("failed to create transaction: %w", err)
