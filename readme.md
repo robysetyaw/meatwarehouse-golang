@@ -9,7 +9,7 @@ migrate  -database "postgres://postgres:(pass)@localhost:5432/meatwarehouse?sslm
 
 ==================================================================================================================================
 
-1. Laporan Penjualan (Sales Report) 
+1. Laporan Penjualan (Sales Report)
 	Laporan ini akan memberikan gambaran tentang total penjualan yang dilakukan dalam periode tertentu. Ini dapat dihasilkan dengan menjumlahkan total penjualan (total) dari semua entri transaksi dengan tx_type yang sesuai (misalnya, "out") dan mengelompokkannya berdasarkan tanggal (date) atau pelanggan (customer_id).(tx_type_= out, total)
 
 2. Laporan Penerimaan (Receipt Report)

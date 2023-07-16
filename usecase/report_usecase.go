@@ -10,7 +10,8 @@ import (
 type ReportUseCase interface {
 	GenerateExpenditureReport(startDate time.Time, endDate time.Time) (*model.ExpenditureReport, error)
 	GenerateReport(startDate time.Time, endDate time.Time) (*model.TransactionReport, error)
-	GenerateSalesReport(startDate time.Time, endDate time.Time) (*model.TransactionReportOut, error)
+	GenerateSalesReport(startDate time.Time, endDate time.Time) (*model.SalesReportOut, error)
+	GenerateReceiptReport(startDate time.Time, endDate time.Time) (*model.ReceiptReport, error)
 }
 
 type reportUseCase struct {
@@ -64,12 +65,12 @@ func (uc *reportUseCase) GenerateExpenditureReport(startDate time.Time, endDate 
 
 func (uc *reportUseCase) GenerateReport(startDate time.Time, endDate time.Time) (*model.TransactionReport, error) {
 	// total incomeTransaction
-	income, err := uc.transactionRepo.CountIncomeTransactions(startDate,endDate)
+	income, err := uc.transactionRepo.SumIncomeTransactions(startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
 	// total expendituresTransaction
-	expenditureTransaction, err := uc.transactionRepo.CountOutcomeTransactions(startDate,endDate)
+	expenditureTransaction, err := uc.transactionRepo.SumOutcomeTransactions(startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
@@ -110,28 +111,28 @@ func (uc *reportUseCase) GenerateReport(startDate time.Time, endDate time.Time) 
 	return reportTransaction, nil
 }
 
-func (uc *reportUseCase) GenerateSalesReport(startDate time.Time, endDate time.Time) (*model.TransactionReportOut, error) {
+func (uc *reportUseCase) GenerateSalesReport(startDate time.Time, endDate time.Time) (*model.SalesReportOut, error) {
 	tx_type := "out"
 
 	transaction, err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
-	total, err := uc.transactionRepo.CountIncomeTransactions(startDate,endDate)
+	total, err := uc.transactionRepo.SumIncomeTransactions(startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
 
-	reportTransaction := &model.TransactionReportOut{
-		StartDate:           startDate,
-		EndDate:             endDate,
+	reportTransaction := &model.SalesReportOut{
+		StartDate:  startDate,
+		EndDate:    endDate,
 		SalesTotal: total,
-		Report:              []*model.TransactionReportDetail{},
+		Report:     []*model.TransactionReportDetail{},
 	}
 
 	for i, detTransaction := range transaction {
 		detailReport := &model.TransactionReportDetail{
-			No: i+1,
+			No:                  i + 1,
 			InvoiceNumber:       detTransaction.InvoiceNumber,
 			CustomerName:        detTransaction.Name,
 			Date:                detTransaction.Date,
@@ -143,5 +144,41 @@ func (uc *reportUseCase) GenerateSalesReport(startDate time.Time, endDate time.T
 		reportTransaction.Report = append(reportTransaction.Report, detailReport)
 	}
 
+	return reportTransaction, nil
+}
+
+func (uc *reportUseCase) GenerateReceiptReport(startDate time.Time, endDate time.Time) (*model.ReceiptReport, error) {
+	tx_type := "out"
+	transaction, err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate, endDate, tx_type)
+	if err != nil {
+		return nil, err
+	}
+	total, err := uc.transactionRepo.SumIncomeTransactionsWithType(startDate, endDate, tx_type)
+	if err != nil {
+		return nil, err
+	}
+
+	reportTransaction := &model.ReceiptReport{
+		StartDate:    startDate,
+		EndDate:      endDate,
+		ReceiptTotal: total,
+		Report:       []*model.TransactionReportDetail{},
+	}
+	for i, detTransaction := range transaction {
+		debt := detTransaction.Total - detTransaction.PaymentAmount
+		detailReport := &model.TransactionReportDetail{
+			No:                  i + 1,
+			InvoiceNumber:       detTransaction.InvoiceNumber,
+			CustomerName:        detTransaction.Name,
+			Date:                detTransaction.Date,
+			CompanyName:         detTransaction.Company,
+			PhoneNumberCustomer: detTransaction.PhoneNumber,
+			TxType:              detTransaction.TxType,
+			PaymentStatus:       detTransaction.PaymentStatus,
+			Total:               detTransaction.Total,
+			DebtTotal:           debt,
+		}
+		reportTransaction.Report = append(reportTransaction.Report, detailReport)
+	}
 	return reportTransaction, nil
 }
