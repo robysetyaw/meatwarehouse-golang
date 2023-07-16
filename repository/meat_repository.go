@@ -89,7 +89,7 @@ func (r *meatRepository) GetMeatByName(name string) (*model.Meat, error) {
 	err := r.db.QueryRow(query, name).Scan(&meat.ID, &meat.Name, &meat.Stock, &meat.Price, &meat.IsActive, &meat.CreatedAt, &meat.UpdatedAt, &meat.CreatedBy, &meat.UpdatedBy)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("Not Found") // Meat not found
+			return nil, fmt.Errorf("not Found") // Meat not found
 		}
 		return nil, fmt.Errorf("failed to get meat by meatname: %v", err)
 	}
