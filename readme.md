@@ -5,4 +5,13 @@ migrate  -database "postgres://postgres:(pass)@localhost:5432/meatwarehouse?sslm
 
 
 
- 
+ TODO
+ report	
+    -dailyExpenditureReport
+	-transactionReport				                -> total_in - total_out
+	-transactionAndExpenditureReport		        -> total_in - (total_out + expenditure)
+	-unpaidOwnerReport (in)(kita beli daging)	    -> total hutang perusahaan
+	-unpaidCustomersReport (out)(kita jual daging)	-> total hutang customers
+	-paidOwnerReport (in)				            -> uang keluar perusahaan untuk daging
+	-paidCustomersReport (out)		            	-> uang masuk ke perusahaan
+	-
