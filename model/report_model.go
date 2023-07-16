@@ -36,6 +36,7 @@ type TransactionReportOut struct {
 }
 
 type TransactionReportDetail struct {
+	No                  int
 	InvoiceNumber       string
 	Date                string
 	CustomerName        string

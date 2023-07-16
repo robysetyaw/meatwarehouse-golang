@@ -15,11 +15,11 @@ type TransactionRepository interface {
 	GetAllTransactions() ([]*model.TransactionHeader, error)
 	DeleteTransaction(id string) error
 	CountTransactions() (int, error)
-	CountExpenditureTransactions() (float64, error)
-	CountIncomeTransactions() (float64, error)	
+	CountOutcomeTransactions(startDate time.Time, endDate time.Time) (float64, error)
+	CountIncomeTransactions(startDate time.Time, endDate time.Time) (float64, error)
 	GetByInvoiceNumber(invoice_number string) (*model.TransactionHeader, error)
 	UpdateStatusInvoicePaid(id string) error
-	UpdateStatusPaymentAmount(id string,total float64 ) error
+	UpdateStatusPaymentAmount(id string, total float64) error
 	GetTransactionByRangeDateWithTxType(startDate time.Time, endDate time.Time, tx_type string) ([]*model.TransactionHeader, error)
 }
 
@@ -44,7 +44,7 @@ func (repo *transactionRepository) CreateTransactionHeader(header *model.Transac
 	header.IsActive = true
 
 	query := "INSERT INTO transaction_headers (id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, inv_number, payment_amount, payment_status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id"
-	err = tx.QueryRow(query,header.ID, header.Date, header.CustomerID, header.Name, header.Address, header.Company, header.PhoneNumber, header.TxType, header.Total, header.IsActive, header.CreatedAt, header.UpdatedAt, header.CreatedBy, header.UpdatedBy, header.InvoiceNumber, header.PaymentAmount, header.PaymentStatus).Scan(&header.ID)
+	err = tx.QueryRow(query, header.ID, header.Date, header.CustomerID, header.Name, header.Address, header.Company, header.PhoneNumber, header.TxType, header.Total, header.IsActive, header.CreatedAt, header.UpdatedAt, header.CreatedBy, header.UpdatedBy, header.InvoiceNumber, header.PaymentAmount, header.PaymentStatus).Scan(&header.ID)
 	if err != nil {
 		// tx.Rollback()
 		return fmt.Errorf("failed to create transaction header: %w", err)
@@ -213,20 +213,20 @@ func (repo *transactionRepository) CountTransactions() (int, error) {
 
 	return count + 1, nil
 }
-func (repo *transactionRepository) CountIncomeTransactions() (float64, error) {
+func (repo *transactionRepository) CountIncomeTransactions(startDate time.Time, endDate time.Time) (float64, error) {
 	var income float64
 
-	err := repo.db.QueryRow("SELECT SUM(total) FROM transaction_headers WHERE tx_type = 'out'").Scan(&income)
+	err := repo.db.QueryRow("SELECT SUM(total) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = 'out'").Scan(&income)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count Income transactions: %w", err)
 	}
 
 	return income, nil
 }
-func (repo *transactionRepository) CountExpenditureTransactions() (float64, error) {
+func (repo *transactionRepository) CountOutcomeTransactions(startDate time.Time, endDate time.Time) (float64, error) {
 	var expenditure float64
 
-	err := repo.db.QueryRow("SELECT SUM(total) FROM transaction_headers WHERE tx_type = 'in'").Scan(&expenditure)
+	err := repo.db.QueryRow("SELECT SUM(total) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = 'in'").Scan(&expenditure)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count expenditure transactions: %w", err)
 	}
@@ -281,7 +281,7 @@ func (repo *transactionRepository) GetTransactionByRangeDate(startDate time.Time
 	return transactions, nil
 }
 
-func (repo *transactionRepository) GetByInvoiceNumber(invoice_number string) (*model.TransactionHeader, error){
+func (repo *transactionRepository) GetByInvoiceNumber(invoice_number string) (*model.TransactionHeader, error) {
 	var transaction model.TransactionHeader
 
 	// Get transaction header from database
@@ -353,7 +353,7 @@ func (repo *transactionRepository) GetByInvoiceNumber(invoice_number string) (*m
 		return nil, fmt.Errorf("error occurred while iterating over transaction detail rows: %w", err)
 	}
 
-	return &transaction, nil	
+	return &transaction, nil
 }
 
 func (repo *transactionRepository) UpdateStatusInvoicePaid(id string) error {
@@ -369,7 +369,7 @@ func (repo *transactionRepository) UpdateStatusInvoicePaid(id string) error {
 	return nil
 }
 
-func (repo *transactionRepository) UpdateStatusPaymentAmount(id string,total float64 ) error {
+func (repo *transactionRepository) UpdateStatusPaymentAmount(id string, total float64) error {
 	_, err := repo.db.Exec(`
 		UPDATE transaction_headers
 		SET payment_amount = $1
@@ -387,7 +387,7 @@ func (repo *transactionRepository) GetTransactionByRangeDateWithTxType(startDate
 	rows, err := repo.db.Query(`
 		SELECT id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, inv_number
 		FROM transaction_headers
-		WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND is_active = true AND tx_type = $3
+		WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND is_active = true AND tx_type = $3 order by created_at ASC
 	`, startDate, endDate, tx_type)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all transactions: %w", err)

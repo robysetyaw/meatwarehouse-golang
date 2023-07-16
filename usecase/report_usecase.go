@@ -64,12 +64,12 @@ func (uc *reportUseCase) GenerateExpenditureReport(startDate time.Time, endDate 
 
 func (uc *reportUseCase) GenerateReport(startDate time.Time, endDate time.Time) (*model.TransactionReport, error) {
 	// total incomeTransaction
-	income, err := uc.transactionRepo.CountIncomeTransactions()
+	income, err := uc.transactionRepo.CountIncomeTransactions(startDate,endDate)
 	if err != nil {
 		return nil, err
 	}
 	// total expendituresTransaction
-	expenditureTransaction, err := uc.transactionRepo.CountExpenditureTransactions()
+	expenditureTransaction, err := uc.transactionRepo.CountOutcomeTransactions(startDate,endDate)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func (uc *reportUseCase) GenerateSalesReport(startDate time.Time, endDate time.T
 	if err != nil {
 		return nil, err
 	}
-	total, err := uc.transactionRepo.CountIncomeTransactions()
+	total, err := uc.transactionRepo.CountIncomeTransactions(startDate,endDate)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +129,9 @@ func (uc *reportUseCase) GenerateSalesReport(startDate time.Time, endDate time.T
 		Report:              []*model.TransactionReportDetail{},
 	}
 
-	for _, detTransaction := range transaction {
+	for i, detTransaction := range transaction {
 		detailReport := &model.TransactionReportDetail{
+			No: i+1,
 			InvoiceNumber:       detTransaction.InvoiceNumber,
 			CustomerName:        detTransaction.Name,
 			Date:                detTransaction.Date,
