@@ -26,6 +26,7 @@ type TransactionRepository interface {
 	SumPaymentTransactionsWithTypeAndStatus(startDate time.Time, endDate time.Time, tx_type string, status string) (float64, error)
 	SumTotalTransactionWithType(startDate time.Time, endDate time.Time, tx_type string) (float64, error)
 	SumTotalTransactionWithTypeAndStatus (startDate time.Time, endDate time.Time, tx_type string, status string) (float64, error)
+	GetTransactionsByDateAndType(startDate time.Time, endDate time.Time, txType string) ([]*model.TransactionHeader, error)
 }
 
 type transactionRepository struct {
@@ -527,4 +528,85 @@ func (repo *transactionRepository) SumTotalTransactionWithTypeAndStatus (startDa
 	}
 
 	return income, nil
+}
+
+func (repo *transactionRepository) GetTransactionsByDateAndType(startDate time.Time, endDate time.Time, txType string) ([]*model.TransactionHeader, error) {
+	query := `
+		SELECT th.id, th.date, th.customer_id, th.name, th.address, th.company, th.phone_number, th.tx_type, th.total, th.is_active, th.created_at, th.updated_at, th.created_by, th.updated_by, th.inv_number, th.payment_amount, th.payment_status,
+			td.id, td.transaction_id, td.meat_id, td.meat_name, td.qty, td.price, td.total, td.is_active, td.created_at, td.updated_at, td.created_by, td.updated_by
+		FROM transaction_details AS td
+		JOIN transaction_headers AS th ON th.id = td.transaction_id
+		WHERE th.date >= $1 AND th.date <= $2 AND th.is_active = true AND th.tx_type = $3
+		ORDER BY td.created_at ASC
+	`
+
+	rows, err := repo.db.Query(query, startDate, endDate, txType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transactions: %w", err)
+	}
+	defer rows.Close()
+
+	// Map to store unique transaction headers
+	transactionMap := make(map[string]*model.TransactionHeader)
+
+	for rows.Next() {
+		var transactionHeader model.TransactionHeader
+		var transactionDetail model.TransactionDetail
+
+		err := rows.Scan(
+			&transactionHeader.ID,
+			&transactionHeader.Date,
+			&transactionHeader.CustomerID,
+			&transactionHeader.Name,
+			&transactionHeader.Address,
+			&transactionHeader.Company,
+			&transactionHeader.PhoneNumber,
+			&transactionHeader.TxType,
+			&transactionHeader.Total,
+			&transactionHeader.IsActive,
+			&transactionHeader.CreatedAt,
+			&transactionHeader.UpdatedAt,
+			&transactionHeader.CreatedBy,
+			&transactionHeader.UpdatedBy,
+			&transactionHeader.InvoiceNumber,
+			&transactionHeader.PaymentAmount,
+			&transactionHeader.PaymentStatus,
+			&transactionDetail.ID,
+			&transactionDetail.TransactionID,
+			&transactionDetail.MeatID,
+			&transactionDetail.MeatName,
+			&transactionDetail.Qty,
+			&transactionDetail.Price,
+			&transactionDetail.Total,
+			&transactionDetail.IsActive,
+			&transactionDetail.CreatedAt,
+			&transactionDetail.UpdatedAt,
+			&transactionDetail.CreatedBy,
+			&transactionDetail.UpdatedBy,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction row: %w", err)
+		}
+
+		// Check if the transaction header has already been added to the map
+		if _, ok := transactionMap[transactionHeader.ID]; !ok {
+			// If not, add the transaction header to the map
+			transactionMap[transactionHeader.ID] = &transactionHeader
+		}
+
+		// Append the transaction detail to the transaction header
+		transactionMap[transactionHeader.ID].TransactionDetails = append(transactionMap[transactionHeader.ID].TransactionDetails, &transactionDetail)
+	}
+
+	// Convert the map of transaction headers to a slice
+	transactions := make([]*model.TransactionHeader, 0, len(transactionMap))
+	for _, transaction := range transactionMap {
+		transactions = append(transactions, transaction)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred while iterating over transaction rows: %w", err)
+	}
+
+	return transactions, nil
 }

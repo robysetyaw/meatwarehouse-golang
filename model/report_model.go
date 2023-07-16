@@ -127,3 +127,11 @@ type ConsolidatedReport struct {
 	ProfitLossStatement       *ProfitAndLossStatement    `json:"profit_loss_statement"`
 	CashFlowStatement         *CashFlowStatement         `json:"cash_flow_statement"`
 }
+
+type StockMovementReport struct {
+	MeatID        string  `json:"meat_id"`
+	MeatName      string  `json:"meat_name"`
+	TotalStockIn  float64 `json:"total_stock_in"`
+	TotalStockOut float64 `json:"total_stock_out"`
+	StockMovement float64 `json:"stock_movement"`
+}

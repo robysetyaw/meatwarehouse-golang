@@ -29,6 +29,7 @@ func (s *Server) initController() {
 	controller.NewReportController(s.engine, s.useCaseManager.GetReportUsecase())
 	controller.NewTransactionController(s.engine, s.useCaseManager.GetTransactionUseCase())
 	controller.NewCreditPaymentController(s.engine, s.useCaseManager.GetCreditPaymentUseCase())
+	controller.NewStockMovementController(s.engine, s.useCaseManager.GetStockMovementReportUseCase())
 }
 func NewServer() *Server {
 	c, err := config.NewConfig()
