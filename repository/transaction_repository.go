@@ -218,7 +218,7 @@ func (repo *transactionRepository) CountTransactions() (int, error) {
 func (repo *transactionRepository) SumIncomeTransactions(startDate time.Time, endDate time.Time) (float64, error) {
 	var income float64
 
-	err := repo.db.QueryRow("SELECT SUM(total) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = 'out'").Scan(&income)
+	err := repo.db.QueryRow("SELECT SUM(total) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = 'out'",startDate,endDate).Scan(&income)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count Income transactions: %w", err)
 	}

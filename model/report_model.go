@@ -10,6 +10,7 @@ type ExpenditureReport struct {
 }
 
 type DailyExpenditureReport struct {
+	No          int
 	ID          string    `json:"id"`
 	UserID      string    `json:"-"`
 	Username    string    `json:"username"`
@@ -74,4 +75,16 @@ type DebtAccountsPayableReportDetail struct {
 	TxType              string
 	PaymentStatus       string
 	Debt                float64
+}
+
+type ProfitAndLossStatement struct {
+	StartDate          time.Time
+	EndDate            time.Time
+	SalesTotal         float64
+	TotalExpenditure   float64
+	TotalInTransaction float64
+	Profit             float64
+	Sales              []*TransactionReportDetail
+	TransactionIn      []*TransactionReportDetail
+	Expenditures       []*DailyExpenditureReport
 }

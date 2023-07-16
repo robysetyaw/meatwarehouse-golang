@@ -13,6 +13,7 @@ type ReportUseCase interface {
 	GenerateSalesReport(startDate time.Time, endDate time.Time) (*model.SalesReportOut, error)
 	GenerateReceiptReport(startDate time.Time, endDate time.Time) (*model.ReceiptReport, error)
 	GenerateDebtAccountsPayableReport(startDate time.Time, endDate time.Time) (*model.DebtAccountsPayableReport, error)
+	GenerateProfitLossStatement(startDate time.Time, endDate time.Time) (*model.ProfitAndLossStatement, error)
 }
 
 type reportUseCase struct {
@@ -46,8 +47,9 @@ func (uc *reportUseCase) GenerateExpenditureReport(startDate time.Time, endDate 
 		Expenditures:     []*model.DailyExpenditureReport{},
 	}
 
-	for _, expenditure := range expenditures {
+	for i, expenditure := range expenditures {
 		dailyReport := &model.DailyExpenditureReport{
+			No:          i,
 			ID:          expenditure.ID,
 			UserID:      expenditure.UserID,
 			Username:    expenditure.Username,
@@ -244,4 +246,91 @@ func (uc *reportUseCase) GenerateDebtAccountsPayableReport(startDate time.Time, 
 		reportTransaction.Debt = append(reportTransaction.Debt, detailReport)
 	}
 	return reportTransaction, nil
+}
+
+func (uc *reportUseCase) GenerateProfitLossStatement(startDate time.Time, endDate time.Time) (*model.ProfitAndLossStatement, error) {
+
+	tx_type := "out"
+
+	sales, err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate, endDate, tx_type)
+	if err != nil {
+		return nil, err
+	}
+	totalSales, err := uc.transactionRepo.SumIncomeTransactions(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	tx_type = "in"
+	transactionOut, err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate, endDate, tx_type)
+	if err != nil {
+		return nil, err
+	}
+	totalOut, err := uc.transactionRepo.SumIncomeTransactionsWithType(startDate, endDate, tx_type)
+	if err != nil {
+		return nil, err
+	}
+
+	totalExpenditure, err := uc.dailyExpenditureRepo.GetTotalExpenditureByDateRange(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	expenditures, err := uc.dailyExpenditureRepo.GetExpendituresByDateRange(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	PnL := &model.ProfitAndLossStatement{
+		StartDate:          startDate,
+		EndDate:            endDate,
+		SalesTotal:         totalSales,
+		TotalExpenditure:   totalExpenditure,
+		TotalInTransaction: totalOut,
+		Profit:             totalSales - (totalExpenditure + totalOut),
+		Sales:              []*model.TransactionReportDetail{},
+		TransactionIn:      []*model.TransactionReportDetail{},
+		Expenditures:       []*model.DailyExpenditureReport{},
+	}
+
+	for i, s := range sales {
+		detailReport := &model.TransactionReportDetail{
+			No:                  i + 1,
+			InvoiceNumber:       s.InvoiceNumber,
+			Date:                s.Date,
+			CustomerName:        s.Name,
+			CompanyName:         s.Company,
+			PhoneNumberCustomer: s.PhoneNumber,
+			TxType:              s.TxType,
+			Total:               s.Total,
+		}
+		PnL.Sales = append(PnL.Sales, detailReport)
+	}
+	for i, ti := range transactionOut {
+		detailTransactionIn := &model.TransactionReportDetail{
+			No:                  i + 1,
+			InvoiceNumber:       ti.InvoiceNumber,
+			Date:                ti.Date,
+			CustomerName:        ti.Name,
+			CompanyName:         ti.Company,
+			PhoneNumberCustomer: ti.PhoneNumber,
+			TxType:              ti.TxType,
+			Total:               ti.Total,
+		}
+		PnL.TransactionIn = append(PnL.TransactionIn, detailTransactionIn)
+	}
+	for i, expenditure := range expenditures {
+		dailyReport := &model.DailyExpenditureReport{
+			No:          i,
+			ID:          expenditure.ID,
+			UserID:      expenditure.UserID,
+			Username:    expenditure.Username,
+			Amount:      expenditure.Amount,
+			Description: expenditure.Description,
+			CreatedAt:   expenditure.CreatedAt,
+			UpdatedAt:   expenditure.UpdatedAt,
+			Date:        expenditure.Date,
+		}
+
+		PnL.Expenditures = append(PnL.Expenditures, dailyReport)
+	}
+	return PnL, nil
 }
