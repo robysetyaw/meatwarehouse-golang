@@ -22,7 +22,10 @@ type TransactionRepository interface {
 	UpdateStatusPaymentAmount(id string, total float64) error
 	GetTransactionByRangeDateWithTxType(startDate time.Time, endDate time.Time, tx_type string) ([]*model.TransactionHeader, error)
 	GetTransactionByRangeDateWithTxTypeAndPaid(startDate time.Time, endDate time.Time, tx_type, payment_status string) ([]*model.TransactionHeader, error)
-	SumIncomeTransactionsWithType(startDate time.Time, endDate time.Time, tx_type string) (float64, error)
+	SumPaymentTransactionsWithType(startDate time.Time, endDate time.Time, tx_type string) (float64, error)
+	SumPaymentTransactionsWithTypeAndStatus(startDate time.Time, endDate time.Time, tx_type string, status string) (float64, error)
+	SumTotalTransactionWithType(startDate time.Time, endDate time.Time, tx_type string) (float64, error)
+	SumTotalTransactionWithTypeAndStatus (startDate time.Time, endDate time.Time, tx_type string, status string) (float64, error)
 }
 
 type transactionRepository struct {
@@ -228,7 +231,7 @@ func (repo *transactionRepository) SumIncomeTransactions(startDate time.Time, en
 func (repo *transactionRepository) SumOutcomeTransactions(startDate time.Time, endDate time.Time) (float64, error) {
 	var expenditure float64
 
-	err := repo.db.QueryRow("SELECT SUM(total) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = 'in'").Scan(&expenditure)
+	err := repo.db.QueryRow("SELECT SUM(total) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = 'in'", startDate,endDate).Scan(&expenditure)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count expenditure transactions: %w", err)
 	}
@@ -483,10 +486,42 @@ func (repo *transactionRepository) GetTransactionByRangeDateWithTxTypeAndPaid(st
 	return transactions, nil
 }
 
-func (repo *transactionRepository) SumIncomeTransactionsWithType(startDate time.Time, endDate time.Time, tx_type string) (float64, error) {
+func (repo *transactionRepository) SumPaymentTransactionsWithType(startDate time.Time, endDate time.Time, tx_type string) (float64, error) {
 	var income float64
 
 	err := repo.db.QueryRow("SELECT SUM(payment_amount) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = $3", startDate,endDate,tx_type).Scan(&income)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count Income transactions: %w", err)
+	}
+
+	return income, nil
+}
+func (repo *transactionRepository) SumPaymentTransactionsWithTypeAndStatus(startDate time.Time, endDate time.Time, tx_type string, status string) (float64, error) {
+	var income float64
+
+	err := repo.db.QueryRow("SELECT SUM(payment_amount) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = $3 AND payment_status = $4 ", startDate,endDate,tx_type, status).Scan(&income)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count Income transactions: %w", err)
+	}
+
+	return income, nil
+}
+
+func (repo *transactionRepository) SumTotalTransactionWithType(startDate time.Time, endDate time.Time, tx_type string) (float64, error) {
+	var income float64
+
+	err := repo.db.QueryRow("SELECT SUM(total) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = $3",startDate,endDate,tx_type).Scan(&income)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count Income transactions: %w", err)
+	}
+
+	return income, nil
+}
+
+func (repo *transactionRepository) SumTotalTransactionWithTypeAndStatus (startDate time.Time, endDate time.Time, tx_type string, status string) (float64, error) {
+	var income float64
+
+	err := repo.db.QueryRow("SELECT SUM(total) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = $3 AND payment_status = $4",startDate,endDate,tx_type,status).Scan(&income)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count Income transactions: %w", err)
 	}

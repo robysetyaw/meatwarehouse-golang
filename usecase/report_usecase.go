@@ -15,12 +15,12 @@ type ReportUseCase interface {
 	GenerateDebtAccountsPayableReport(startDate time.Time, endDate time.Time) (*model.DebtAccountsPayableReport, error)
 	GenerateProfitLossStatement(startDate time.Time, endDate time.Time) (*model.ProfitAndLossStatement, error)
 	GenerateCashFlowStatement(startDate time.Time, endDate time.Time) (*model.CashFlowStatement, error)
+	GenerateConsolidatedReport(startDate time.Time, endDate time.Time) (*model.ConsolidatedReport, error)
 }
 
 type reportUseCase struct {
 	transactionRepo      repository.TransactionRepository
 	dailyExpenditureRepo repository.DailyExpenditureRepository
-	userUseCase
 }
 
 func NewReportUseCase(dailyExpenditureRepo repository.DailyExpenditureRepository, transactionRepo repository.TransactionRepository) ReportUseCase {
@@ -50,7 +50,7 @@ func (uc *reportUseCase) GenerateExpenditureReport(startDate time.Time, endDate 
 
 	for i, expenditure := range expenditures {
 		dailyReport := &model.DailyExpenditureReport{
-			No:          i,
+			No:          i+1,
 			ID:          expenditure.ID,
 			UserID:      expenditure.UserID,
 			Username:    expenditure.Username,
@@ -157,7 +157,7 @@ func (uc *reportUseCase) GenerateReceiptReport(startDate time.Time, endDate time
 	if err != nil {
 		return nil, err
 	}
-	total, err := uc.transactionRepo.SumIncomeTransactionsWithType(startDate, endDate, tx_type)
+	total, err := uc.transactionRepo.SumPaymentTransactionsWithType(startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
@@ -178,6 +178,7 @@ func (uc *reportUseCase) GenerateReceiptReport(startDate time.Time, endDate time
 			CompanyName:         detTransaction.Company,
 			PhoneNumberCustomer: detTransaction.PhoneNumber,
 			TxType:              detTransaction.TxType,
+			PaymentAmount:       detTransaction.PaymentAmount,
 			PaymentStatus:       detTransaction.PaymentStatus,
 			Total:               detTransaction.Total,
 			DebtTotal:           debt,
@@ -195,7 +196,11 @@ func (uc *reportUseCase) GenerateDebtAccountsPayableReport(startDate time.Time, 
 		return nil, err
 	}
 
-	totalIn, err := uc.transactionRepo.SumIncomeTransactionsWithType(startDate, endDate, tx_type)
+	payIn, err := uc.transactionRepo.SumPaymentTransactionsWithTypeAndStatus(startDate, endDate, tx_type,status)
+	if err != nil {
+		return nil, err
+	}
+	totalIn,err := uc.transactionRepo.SumTotalTransactionWithTypeAndStatus(startDate,endDate,tx_type,status)
 	if err != nil {
 		return nil, err
 	}
@@ -204,15 +209,19 @@ func (uc *reportUseCase) GenerateDebtAccountsPayableReport(startDate time.Time, 
 	if err != nil {
 		return nil, err
 	}
-	totalOut, err := uc.transactionRepo.SumIncomeTransactionsWithType(startDate, endDate, tx_type)
+	payOut, err := uc.transactionRepo.SumPaymentTransactionsWithTypeAndStatus(startDate, endDate, tx_type, status)
+	if err != nil {
+		return nil, err
+	}
+	totalOut,err := uc.transactionRepo.SumTotalTransactionWithTypeAndStatus(startDate,endDate,tx_type, status)
 	if err != nil {
 		return nil, err
 	}
 	reportTransaction := &model.DebtAccountsPayableReport{
 		StartDate:        startDate,
 		EndDate:          endDate,
-		ReceivablesTotal: totalOut,
-		DebtTotal:        totalIn,
+		ReceivablesTotal: totalIn - payIn ,
+		DebtTotal:        totalOut - payOut,
 		Receivables:      []*model.DebtAccountsPayableReportDetail{},
 		Debt:             []*model.DebtAccountsPayableReportDetail{},
 	}
@@ -266,7 +275,7 @@ func (uc *reportUseCase) GenerateProfitLossStatement(startDate time.Time, endDat
 	if err != nil {
 		return nil, err
 	}
-	totalOut, err := uc.transactionRepo.SumIncomeTransactionsWithType(startDate, endDate, tx_type)
+	totalOut, err := uc.transactionRepo.SumPaymentTransactionsWithType(startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
@@ -338,20 +347,20 @@ func (uc *reportUseCase) GenerateProfitLossStatement(startDate time.Time, endDat
 
 func (uc *reportUseCase) GenerateCashFlowStatement(startDate time.Time, endDate time.Time) (*model.CashFlowStatement, error) {
 	tx_type := "in"
-	totalCashOut, err := uc.transactionRepo.SumIncomeTransactionsWithType(startDate, endDate, tx_type)
+	totalCashOut, err := uc.transactionRepo.SumPaymentTransactionsWithType(startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
-	paymentIn,err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate,endDate,tx_type)
+	paymentIn, err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
 	tx_type = "out"
-	totalCashIn, err := uc.transactionRepo.SumIncomeTransactionsWithType(startDate, endDate, tx_type)
+	totalCashIn, err := uc.transactionRepo.SumPaymentTransactionsWithType(startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
-	paymentOut,err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate,endDate,tx_type)
+	paymentOut, err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
@@ -365,7 +374,6 @@ func (uc *reportUseCase) GenerateCashFlowStatement(startDate time.Time, endDate 
 	if err != nil {
 		return nil, err
 	}
-	
 
 	reportTransaction := &model.CashFlowStatement{
 		StartDate:        startDate,
@@ -421,6 +429,53 @@ func (uc *reportUseCase) GenerateCashFlowStatement(startDate time.Time, endDate 
 		reportTransaction.Expenditure = append(reportTransaction.Expenditure, dailyReport)
 	}
 	return reportTransaction, nil
+}
 
-	return reportTransaction, nil
+func (uc *reportUseCase) GenerateConsolidatedReport(startDate time.Time, endDate time.Time) (*model.ConsolidatedReport, error) {
+	expenditureReport, err := uc.GenerateExpenditureReport(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	transactionReport, err := uc.GenerateReport(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	salesReport, err := uc.GenerateSalesReport(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	receiptReport, err := uc.GenerateReceiptReport(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	debtAccountsPayableReport, err := uc.GenerateDebtAccountsPayableReport(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	profitLossStatement, err := uc.GenerateProfitLossStatement(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	cashFlowStatement, err := uc.GenerateCashFlowStatement(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	consolidatedReport := &model.ConsolidatedReport{
+		ExpenditureReport:         expenditureReport,
+		TransactionReport:         transactionReport,
+		SalesReport:               salesReport,
+		ReceiptReport:             receiptReport,
+		DebtAccountsPayableReport: debtAccountsPayableReport,
+		ProfitLossStatement:       profitLossStatement,
+		CashFlowStatement:         cashFlowStatement,
+	}
+
+	return consolidatedReport, nil
 }

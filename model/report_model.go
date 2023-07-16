@@ -65,6 +65,7 @@ type TransactionReportDetail struct {
 	TxType              string
 	Total               float64
 	PaymentStatus       string
+	PaymentAmount       float64
 	DebtTotal           float64
 }
 
@@ -99,4 +100,30 @@ type ProfitAndLossStatement struct {
 	Sales              []*TransactionReportDetail
 	TransactionIn      []*TransactionReportDetail
 	Expenditures       []*DailyExpenditureReport
+}
+
+type ConsolidatedReportMaul struct {
+	StartDate          time.Time
+	EndDate            time.Time
+	SalesTotal         float64
+	SalesDetail        []*SalesReportOut
+	ReceiptTotal       float64
+	ReceiptDetail      []*ReceiptReport
+	DebtOwnerTotal     float64
+	DebtOwnerDetail    []*DebtAccountsPayableReportDetail
+	DebtCustomerTotal  float64
+	DebtCustomerDetail []*DebtAccountsPayableReportDetail
+	ProfitTotal        float64
+	ProfitDetail       []*ProfitAndLossStatement
+	CashTotal          float64
+	CashTotalDetail    []*CashFlowStatement
+}
+type ConsolidatedReport struct {
+	ExpenditureReport         *ExpenditureReport         `json:"expenditure_report"`
+	TransactionReport         *TransactionReport         `json:"transaction_report"`
+	SalesReport               *SalesReportOut            `json:"sales_report"`
+	ReceiptReport             *ReceiptReport             `json:"receipt_report"`
+	DebtAccountsPayableReport *DebtAccountsPayableReport `json:"debt_accounts_payable_report"`
+	ProfitLossStatement       *ProfitAndLossStatement    `json:"profit_loss_statement"`
+	CashFlowStatement         *CashFlowStatement         `json:"cash_flow_statement"`
 }
