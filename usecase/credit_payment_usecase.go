@@ -49,21 +49,24 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 		return fmt.Errorf("invoice Already Paid")
 	}
 	totalCredit, err := uc.creditPaymentRepo.GetTotalCredit(payment.InvoiceNumber)
-	uc.transactionRepo.UpdateStatusPaymentAmount(transaction.ID,totalCredit)
 	if err != nil {
 		return  err
 	}
+	err = uc.creditPaymentRepo.CreateCreditPayment(payment)
+	if err != nil {
+		return err
+	}
+	totalCredit, err = uc.creditPaymentRepo.GetTotalCredit(payment.InvoiceNumber)
+	if err != nil {
+		return  err
+	}
+	uc.transactionRepo.UpdateStatusPaymentAmount(transaction.ID,totalCredit)
 
 	if totalCredit >= transaction.Total {
 		err = uc.transactionRepo.UpdateStatusInvoicePaid(transaction.ID)
 		if err != nil {
 			return err
 		}
-	}
-
-	err = uc.creditPaymentRepo.CreateCreditPayment(payment)
-	if err != nil {
-		return err
 	}
 
 	return nil

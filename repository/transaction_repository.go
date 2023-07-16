@@ -215,7 +215,7 @@ func (repo *transactionRepository) GetByInvoiceNumber(invoice_number string) (*m
 
 	// Get transaction header from database
 	err := repo.db.QueryRow(`
-		SELECT id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, inv_number
+		SELECT id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, inv_number, payment_status, payment_amount
 		FROM transaction_headers
 		WHERE inv_number = $1 AND is_active
 	`, invoice_number).Scan(
@@ -234,6 +234,8 @@ func (repo *transactionRepository) GetByInvoiceNumber(invoice_number string) (*m
 		&transaction.CreatedBy,
 		&transaction.UpdatedBy,
 		&transaction.InvoiceNumber,
+		&transaction.PaymentStatus,
+		&transaction.PaymentAmount,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
