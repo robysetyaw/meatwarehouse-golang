@@ -38,8 +38,8 @@ func (repo *transactionRepository) CreateTransactionHeader(header *model.Transac
 	header.UpdatedAt = now
 	header.IsActive = true
 
-	query := "INSERT INTO transaction_headers (id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, inv_number) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id"
-	err = tx.QueryRow(query,header.ID, header.Date, header.CustomerID, header.Name, header.Address, header.Company, header.PhoneNumber, header.TxType, header.Total, header.IsActive, header.CreatedAt, header.UpdatedAt, header.CreatedBy, header.UpdatedBy, header.InvoiceNumber).Scan(&header.ID)
+	query := "INSERT INTO transaction_headers (id, date, customer_id, name, address, company, phone_number, tx_type, total, is_active, created_at, updated_at, created_by, updated_by, inv_number, payment_amount, payment_status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id"
+	err = tx.QueryRow(query,header.ID, header.Date, header.CustomerID, header.Name, header.Address, header.Company, header.PhoneNumber, header.TxType, header.Total, header.IsActive, header.CreatedAt, header.UpdatedAt, header.CreatedBy, header.UpdatedBy, header.InvoiceNumber, header.PaymentAmount, header.PaymentStatus).Scan(&header.ID)
 	if err != nil {
 		// tx.Rollback()
 		return fmt.Errorf("failed to create transaction header: %w", err)

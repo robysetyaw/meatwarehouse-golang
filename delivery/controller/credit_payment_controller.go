@@ -3,19 +3,22 @@ package controller
 import (
 	"net/http"
 
+	"enigmacamp.com/final-project/team-4/track-prosto/delivery/middleware"
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 	"enigmacamp.com/final-project/team-4/track-prosto/usecase"
 	"github.com/gin-gonic/gin"
 )
 
 type CreditPaymentController struct {
-	creditPaymentUseCase *usecase.CreditPaymentUseCase
+	creditPaymentUseCase usecase.CreditPaymentUseCase
 }
 
-func NewCreditPaymentController(creditPaymentUseCase *usecase.CreditPaymentUseCase) *CreditPaymentController {
-	return &CreditPaymentController{
+func NewCreditPaymentController(r *gin.Engine, creditPaymentUseCase usecase.CreditPaymentUseCase) *CreditPaymentController {
+	controller := &CreditPaymentController{
 		creditPaymentUseCase: creditPaymentUseCase,
 	}
+	r.POST("/credit_payment", middleware.JWTAuthMiddleware(), controller.CreateCreditPayment)
+	return controller
 }
 
 func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {

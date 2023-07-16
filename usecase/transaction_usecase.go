@@ -22,14 +22,16 @@ type transactionUseCase struct {
 	customerRepo    repository.CustomerRepository
 	meatRepo        repository.MeatRepository
 	companyRepo     repository.CompanyRepository
+	creditPaymentRepo   repository.CreditPaymentRepository
 }
 
-func NewTransactionUseCase(transactionRepo repository.TransactionRepository, customerRepo repository.CustomerRepository, meatRepo repository.MeatRepository, companyRepo repository.CompanyRepository) TransactionUseCase {
+func NewTransactionUseCase(transactionRepo repository.TransactionRepository, customerRepo repository.CustomerRepository, meatRepo repository.MeatRepository, companyRepo repository.CompanyRepository, creditPaymentRepo   repository.CreditPaymentRepository) TransactionUseCase {
 	return &transactionUseCase{
 		transactionRepo: transactionRepo,
 		customerRepo:    customerRepo,
 		meatRepo:        meatRepo,
 		companyRepo:     companyRepo,
+		creditPaymentRepo: creditPaymentRepo,
 	}
 }
 
@@ -65,6 +67,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	transaction.Company = company.CompanyName
 	transaction.CreatedBy = "admin"
 	transaction.UpdatedBy = "admin"
+	transaction.PaymentStatus = "paid"
 	// Perform any business logic or validation before creating the transaction
 	// ...
 
@@ -98,9 +101,23 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		}
 
 	}
-
-	uc.UpdateTotalTransaction(transaction)
 	transaction.CalulatedTotal()
+	newTotal := uc.UpdateTotalTransaction(transaction)
+	
+	if newTotal > transaction.PaymentAmount {
+		transaction.PaymentStatus = "unpaid"
+	}
+	
+	uc.creditPaymentRepo.CreateCreditPayment(&model.CreditPayment{
+		ID: common.UuidGenerate(),
+		InvoiceNumber: transaction.InvoiceNumber,
+		Amount: transaction.PaymentAmount,
+		PaymentDate: transaction.Date,
+		CreatedAt: transaction.CreatedAt,
+		UpdatedAt: transaction.CreatedAt,
+		CreatedBy: transaction.CreatedBy,
+		UpdatedBy: transaction.CreatedBy,
+	})
 	// Create transaction header
 	if err := uc.transactionRepo.CreateTransactionHeader(transaction); err != nil {
 		return fmt.Errorf("failed to create transaction: %w", err)
@@ -125,10 +142,14 @@ func (uc *transactionUseCase) DeleteTransaction(id string) error {
 	return uc.transactionRepo.DeleteTransaction(id)
 }
 
-func (uc *transactionUseCase) UpdateTotalTransaction(transaction *model.TransactionHeader) {
+func (uc *transactionUseCase) UpdateTotalTransaction(transaction *model.TransactionHeader) float64 {
+	var newTotal float64
 	for _, detail := range transaction.TransactionDetails {
 		detail.Total = detail.Price * detail.Qty
+		newTotal = newTotal + detail.Total
 	}
+
+	return newTotal
 }
 
 func (uc *transactionUseCase) GetTransactionByInvoiceNumber(inv_number string) (*model.TransactionHeader, error) {

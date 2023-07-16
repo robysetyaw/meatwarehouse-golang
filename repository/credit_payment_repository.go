@@ -89,7 +89,7 @@ func (repo *creditPaymentRepository) GetTotalCredit(inv_number string) (float64,
 	var total float64
 	err := repo.db.QueryRow(`
         SELECT SUM(amount) FROM credit_payments
-        WHERE inv_number = $1 AND is_active = true
+        WHERE inv_number = '$1' 
     `, ).Scan(&total)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get total credit: %w", err)

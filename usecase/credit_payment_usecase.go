@@ -7,20 +7,25 @@ import (
 	"enigmacamp.com/final-project/team-4/track-prosto/repository"
 )
 
-type CreditPaymentUseCase struct {
+type CreditPaymentUseCase interface {
+	CreateCreditPayment(payment *model.CreditPayment) error
+	GetCreditPayments() ([]*model.CreditPayment, error)
+	GetCreditPaymentByID(id string) (*model.CreditPayment, error)
+	UpdateCreditPayment(payment *model.CreditPayment) error
+}
+type creditPaymentUseCase struct {
 	creditPaymentRepo repository.CreditPaymentRepository
 	transactionRepo repository.TransactionRepository
 }
 
-func NewCreditPaymentUseCase(creditPaymentRepo repository.CreditPaymentRepository, transactionRepo repository.TransactionRepository) *CreditPaymentUseCase {
-	return &CreditPaymentUseCase{
+func NewCreditPaymentUseCase(creditPaymentRepo repository.CreditPaymentRepository, transactionRepo repository.TransactionRepository) CreditPaymentUseCase {
+	return &creditPaymentUseCase{
 		creditPaymentRepo: creditPaymentRepo,
 		transactionRepo: transactionRepo,
-
 	}
 }
 
-func (uc *CreditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment) error {
+func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment) error {
 	// Validasi atau logika bisnis sebelum membuat pembayaran kredit
 	// ...
 	transaction,err := uc.transactionRepo.GetByInvoiceNumber(payment.InvoiceNumber)
@@ -28,10 +33,10 @@ func (uc *CreditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 		return err
 	}
 	if transaction == nil {
-		return fmt.Errorf("InvoiceNumber Not Exist")
+		return fmt.Errorf("invoiceNumber Not Exist")
 	}
 	if transaction.PaymentStatus == "paid" {
-		return fmt.Errorf("Invoice Already Paid")
+		return fmt.Errorf("invoice Already Paid")
 	}
 	totalCredit, err := uc.creditPaymentRepo.GetTotalCredit(payment.InvoiceNumber)
 
@@ -39,7 +44,7 @@ func (uc *CreditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 		return  err
 	}
 
-	if (totalCredit+transaction.PaymentAmount) >= transaction.Total {
+	if totalCredit >= transaction.Total {
 		err = uc.transactionRepo.UpdateStatusInvoicePaid(transaction.ID)
 		if err != nil {
 			return err
@@ -54,7 +59,7 @@ func (uc *CreditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 	return nil
 }
 
-func (uc *CreditPaymentUseCase) GetCreditPayments() ([]*model.CreditPayment, error) {
+func (uc *creditPaymentUseCase) GetCreditPayments() ([]*model.CreditPayment, error) {
 	payments, err := uc.creditPaymentRepo.GetAllCreditPayments()
 	if err != nil {
 		return nil, err
@@ -63,7 +68,7 @@ func (uc *CreditPaymentUseCase) GetCreditPayments() ([]*model.CreditPayment, err
 	return payments, nil
 }
 
-func (uc *CreditPaymentUseCase) GetCreditPaymentByID(id string) (*model.CreditPayment, error) {
+func (uc *creditPaymentUseCase) GetCreditPaymentByID(id string) (*model.CreditPayment, error) {
 	payment, err := uc.creditPaymentRepo.GetCreditPaymentByID(id)
 	if err != nil {
 		return nil, err
@@ -72,7 +77,7 @@ func (uc *CreditPaymentUseCase) GetCreditPaymentByID(id string) (*model.CreditPa
 	return payment, nil
 }
 
-func (uc *CreditPaymentUseCase) UpdateCreditPayment(payment *model.CreditPayment) error {
+func (uc *creditPaymentUseCase) UpdateCreditPayment(payment *model.CreditPayment) error {
 	// Validasi atau logika bisnis sebelum memperbarui pembayaran kredit
 	// ...
 

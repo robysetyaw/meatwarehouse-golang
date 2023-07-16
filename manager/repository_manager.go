@@ -13,6 +13,7 @@ type RepoManager interface {
 	GetCustomerRepo() repository.CustomerRepository
 	GetCompanyRepo() repository.CompanyRepository
 	GetTransactionRepo() repository.TransactionRepository
+	GetCreditPaymentRepo() repository.CreditPaymentRepository
 }
 
 type repoManager struct {
@@ -23,6 +24,7 @@ type repoManager struct {
 	meatRepo             repository.MeatRepository
 	dailyExpenditureRepo repository.DailyExpenditureRepository
 	transactionRepo      repository.TransactionRepository
+	creditPaymentRepo    repository.CreditPaymentRepository
 }
 
 var onceLoadUserRepo sync.Once
@@ -31,6 +33,8 @@ var onceLoadCustomerRepo sync.Once
 var onceLoadCompanyRepo sync.Once
 var onceLoadMeatRepo sync.Once
 var onceLoadTxRepo sync.Once
+var onceLoadCreditPaymentRepo sync.Once
+
 
 func (rm *repoManager) GetUserRepo() repository.UserRepository {
 	onceLoadUserRepo.Do(func() {
@@ -72,6 +76,12 @@ func (rm *repoManager) GetTransactionRepo() repository.TransactionRepository {
 	return rm.transactionRepo
 }
 
+func (rm *repoManager) GetCreditPaymentRepo() repository.CreditPaymentRepository {
+	onceLoadCreditPaymentRepo.Do(func() {
+		rm.creditPaymentRepo = repository.NewCreditPaymentRepository(rm.infraManager.GetDB())
+	})
+	return rm.creditPaymentRepo
+}
 
 func NewRepoManager(infraManager InfraManager) RepoManager {
 	return &repoManager{
