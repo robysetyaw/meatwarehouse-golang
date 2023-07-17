@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"enigmacamp.com/final-project/team-4/track-prosto/apperror"
 	"enigmacamp.com/final-project/team-4/track-prosto/model"
 )
 
@@ -36,7 +37,7 @@ func (repo *dailyExpenditureRepository) GetTotalExpenditureByDateRange(startDate
         WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND is_active = true
     `, startDate, endDate).Scan(&total)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get total expenditure: %w", err)
+		return 0, apperror.AppError{ErrorCode: 404,ErrorMassage: "Data Not Found"}
 	}
 	// fmt.Print(startDate)
 	return total, nil

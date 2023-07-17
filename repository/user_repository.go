@@ -32,7 +32,7 @@ func (r *userRepository) CreateUser(user *model.User) error {
 		INSERT INTO users (id, username, password, is_active, role, created_at, updated_at, created_by, updated_by)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
-
+	
 	_, err := r.db.Exec(query, user.ID, user.Username, user.Password, user.IsActive, user.Role, user.CreatedAt, user.CreatedAt, user.CreatedBy, user.CreatedBy)
 	if err != nil {
 		return err

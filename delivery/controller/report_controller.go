@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
+	"enigmacamp.com/final-project/team-4/track-prosto/apperror"
 	"enigmacamp.com/final-project/team-4/track-prosto/delivery/middleware"
 	"enigmacamp.com/final-project/team-4/track-prosto/usecase"
 	"github.com/gin-gonic/gin"
@@ -49,10 +51,12 @@ func (erc *ReportController) GenerateExpenditureReport(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date"})
 		return
 	}
-
+	
 	report, err := erc.reportUseCase.GenerateExpenditureReport(startDate, endDate)
+	fmt.Println(report)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		errcode := apperror.ErrCode(err.Error())
+		c.JSON(errcode, gin.H{"error": apperror.ErrMessage(err.Error())})
 		return
 	}
 

@@ -19,7 +19,7 @@ func NewTransactionController(r *gin.Engine, transactionUseCase usecase.Transact
 		transactionUseCase: transactionUseCase,
 	}
 
-	r.POST("/transactions", middleware.JWTAuthMiddleware(), controller.CreateTransaction)
+	r.POST("/transactions", middleware.JWTAuthMiddleware(), middleware.JSONMiddleware(),controller.CreateTransaction)
 	// r.GET("/transactions/:id", middleware.JWTAuthMiddleware(), controller.GetTransactionByID)
 	r.GET("/transactions/:invoice_number", middleware.JWTAuthMiddleware(), controller.GetTransactionByInvoiceNumber)
 	r.GET("/transactions", middleware.JWTAuthMiddleware(), controller.GetAllTransactions)
