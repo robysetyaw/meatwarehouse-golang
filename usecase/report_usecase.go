@@ -50,7 +50,7 @@ func (uc *reportUseCase) GenerateExpenditureReport(startDate time.Time, endDate 
 
 	for i, expenditure := range expenditures {
 		dailyReport := &model.DailyExpenditureReport{
-			No:          i+1,
+			No:          i + 1,
 			ID:          expenditure.ID,
 			UserID:      expenditure.UserID,
 			Username:    expenditure.Username,
@@ -144,6 +144,8 @@ func (uc *reportUseCase) GenerateSalesReport(startDate time.Time, endDate time.T
 			PhoneNumberCustomer: detTransaction.PhoneNumber,
 			TxType:              detTransaction.TxType,
 			Total:               detTransaction.Total,
+			PaymentStatus:       detTransaction.PaymentStatus,
+			PaymentAmount:       detTransaction.PaymentAmount,
 		}
 		reportTransaction.Report = append(reportTransaction.Report, detailReport)
 	}
@@ -196,11 +198,11 @@ func (uc *reportUseCase) GenerateDebtAccountsPayableReport(startDate time.Time, 
 		return nil, err
 	}
 
-	payIn, err := uc.transactionRepo.SumPaymentTransactionsWithTypeAndStatus(startDate, endDate, tx_type,status)
+	payIn, err := uc.transactionRepo.SumPaymentTransactionsWithTypeAndStatus(startDate, endDate, tx_type, status)
 	if err != nil {
 		return nil, err
 	}
-	totalIn,err := uc.transactionRepo.SumTotalTransactionWithTypeAndStatus(startDate,endDate,tx_type,status)
+	totalIn, err := uc.transactionRepo.SumTotalTransactionWithTypeAndStatus(startDate, endDate, tx_type, status)
 	if err != nil {
 		return nil, err
 	}
@@ -213,14 +215,14 @@ func (uc *reportUseCase) GenerateDebtAccountsPayableReport(startDate time.Time, 
 	if err != nil {
 		return nil, err
 	}
-	totalOut,err := uc.transactionRepo.SumTotalTransactionWithTypeAndStatus(startDate,endDate,tx_type, status)
+	totalOut, err := uc.transactionRepo.SumTotalTransactionWithTypeAndStatus(startDate, endDate, tx_type, status)
 	if err != nil {
 		return nil, err
 	}
 	reportTransaction := &model.DebtAccountsPayableReport{
 		StartDate:        startDate,
 		EndDate:          endDate,
-		ReceivablesTotal: totalIn - payIn ,
+		ReceivablesTotal: totalIn - payIn,
 		DebtTotal:        totalOut - payOut,
 		Receivables:      []*model.DebtAccountsPayableReportDetail{},
 		Debt:             []*model.DebtAccountsPayableReportDetail{},
