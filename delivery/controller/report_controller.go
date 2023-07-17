@@ -18,7 +18,6 @@ func NewReportController(r *gin.Engine, reportUseCase usecase.ReportUseCase) *Re
 		reportUseCase: reportUseCase,
 	}
 	r.GET("/daily-expenditures/report", middleware.JWTAuthMiddleware(), controller.GenerateExpenditureReport)
-	r.GET("/report", middleware.JWTAuthMiddleware(), controller.GenerateTransactionReport)
 	r.GET("/report/sales-report", controller.GenerateSalesReport)
 	r.GET("/report/receipt-report", controller.GenerateReceiptReport)
 	r.GET("/report/debt-account-payable", controller.GenerateDebtAccountPayableReport)
@@ -52,38 +51,6 @@ func (erc *ReportController) GenerateExpenditureReport(c *gin.Context) {
 	}
 
 	report, err := erc.reportUseCase.GenerateExpenditureReport(startDate, endDate)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, report)
-}
-
-func (erc *ReportController) GenerateTransactionReport(c *gin.Context) {
-	var request struct {
-		StartDate string `json:"start_date"`
-		EndDate   string `json:"end_date"`
-	}
-
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	startDate, err := time.Parse("2006-01-02", request.StartDate)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date"})
-		return
-	}
-
-	endDate, err := time.Parse("2006-01-02", request.EndDate)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date"})
-		return
-	}
-
-	report, err := erc.reportUseCase.GenerateReport(startDate, endDate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

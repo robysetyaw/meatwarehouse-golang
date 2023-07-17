@@ -9,7 +9,6 @@ import (
 
 type ReportUseCase interface {
 	GenerateExpenditureReport(startDate time.Time, endDate time.Time) (*model.ExpenditureReport, error)
-	GenerateReport(startDate time.Time, endDate time.Time) (*model.TransactionReport, error)
 	GenerateSalesReport(startDate time.Time, endDate time.Time) (*model.SalesReportOut, error)
 	GenerateReceiptReport(startDate time.Time, endDate time.Time) (*model.ReceiptReport, error)
 	GenerateDebtAccountsPayableReport(startDate time.Time, endDate time.Time) (*model.DebtAccountsPayableReport, error)
@@ -67,62 +66,14 @@ func (uc *reportUseCase) GenerateExpenditureReport(startDate time.Time, endDate 
 	return report, nil
 }
 
-func (uc *reportUseCase) GenerateReport(startDate time.Time, endDate time.Time) (*model.TransactionReport, error) {
-	// total incomeTransaction
-	income, err := uc.transactionRepo.SumIncomeTransactions(startDate, endDate)
-	if err != nil {
-		return nil, err
-	}
-	// total expendituresTransaction
-	expenditureTransaction, err := uc.transactionRepo.SumOutcomeTransactions(startDate, endDate)
-	if err != nil {
-		return nil, err
-	}
-	// total expendituresDaily
-	expenditureDaily, err := uc.dailyExpenditureRepo.GetTotalExpenditureByDateRange(startDate, endDate)
-	if err != nil {
-		return nil, err
-	}
-	// get data transaction
-	transaction, err := uc.transactionRepo.GetTransactionByRangeDate(startDate, endDate)
-	if err != nil {
-		return nil, err
-	}
-
-	// total expendituresTransaction and expendituresDaily
-	totalExpenditure := expenditureTransaction + expenditureDaily
-
-	reportTransaction := &model.TransactionReport{
-		StartDate:           startDate,
-		EndDate:             endDate,
-		TotalInTransaction:  income,
-		TotalOutTransaction: totalExpenditure,
-		Report:              []*model.TransactionReportDetail{},
-	}
-
-	for _, detTransaction := range transaction {
-		detailReport := &model.TransactionReportDetail{
-			InvoiceNumber:       detTransaction.InvoiceNumber,
-			CustomerName:        detTransaction.Name,
-			CompanyName:         detTransaction.Company,
-			PhoneNumberCustomer: detTransaction.PhoneNumber,
-			TxType:              detTransaction.TxType,
-			Total:               detTransaction.Total,
-		}
-		reportTransaction.Report = append(reportTransaction.Report, detailReport)
-	}
-
-	return reportTransaction, nil
-}
-
 func (uc *reportUseCase) GenerateSalesReport(startDate time.Time, endDate time.Time) (*model.SalesReportOut, error) {
 	tx_type := "out"
-
+	column := "total"
 	transaction, err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
-	total, err := uc.transactionRepo.SumIncomeTransactions(startDate, endDate)
+	total, err := uc.transactionRepo.SumTransactionByDate(column,startDate,endDate)
 	if err != nil {
 		return nil, err
 	}
@@ -155,11 +106,12 @@ func (uc *reportUseCase) GenerateSalesReport(startDate time.Time, endDate time.T
 
 func (uc *reportUseCase) GenerateReceiptReport(startDate time.Time, endDate time.Time) (*model.ReceiptReport, error) {
 	tx_type := "out"
+	column:= "payment_amount"
 	transaction, err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
-	total, err := uc.transactionRepo.SumPaymentTransactionsWithType(startDate, endDate, tx_type)
+	total, err := uc.transactionRepo.SumTransactionByDateAndType(column, startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
@@ -192,17 +144,19 @@ func (uc *reportUseCase) GenerateReceiptReport(startDate time.Time, endDate time
 
 func (uc *reportUseCase) GenerateDebtAccountsPayableReport(startDate time.Time, endDate time.Time) (*model.DebtAccountsPayableReport, error) {
 	tx_type := "out"
+	column_payment := "payment_amount"
+	column_total := "total"
 	status := "unpaid"
 	transactionIn, err := uc.transactionRepo.GetTransactionByRangeDateWithTxTypeAndPaid(startDate, endDate, tx_type, status)
 	if err != nil {
 		return nil, err
 	}
 
-	payIn, err := uc.transactionRepo.SumPaymentTransactionsWithTypeAndStatus(startDate, endDate, tx_type, status)
+	payIn, err := uc.transactionRepo.SumTransactionByDateAndTypeAndStatus(column_payment,startDate, endDate, tx_type, status)
 	if err != nil {
 		return nil, err
 	}
-	totalIn, err := uc.transactionRepo.SumTotalTransactionWithTypeAndStatus(startDate, endDate, tx_type, status)
+	totalIn, err := uc.transactionRepo.SumTransactionByDateAndTypeAndStatus(column_total,startDate, endDate, tx_type, status)
 	if err != nil {
 		return nil, err
 	}
@@ -211,11 +165,11 @@ func (uc *reportUseCase) GenerateDebtAccountsPayableReport(startDate time.Time, 
 	if err != nil {
 		return nil, err
 	}
-	payOut, err := uc.transactionRepo.SumPaymentTransactionsWithTypeAndStatus(startDate, endDate, tx_type, status)
+	payOut, err := uc.transactionRepo.SumTransactionByDateAndTypeAndStatus(column_payment, startDate,endDate, tx_type, status)
 	if err != nil {
 		return nil, err
 	}
-	totalOut, err := uc.transactionRepo.SumTotalTransactionWithTypeAndStatus(startDate, endDate, tx_type, status)
+	totalOut, err := uc.transactionRepo.SumTransactionByDateAndTypeAndStatus(column_total ,startDate, endDate, tx_type, status)
 	if err != nil {
 		return nil, err
 	}
@@ -263,12 +217,13 @@ func (uc *reportUseCase) GenerateDebtAccountsPayableReport(startDate time.Time, 
 func (uc *reportUseCase) GenerateProfitLossStatement(startDate time.Time, endDate time.Time) (*model.ProfitAndLossStatement, error) {
 
 	tx_type := "out"
-
+	column_total := "total"
+	column_payment := "payment_amount"
 	sales, err := uc.transactionRepo.GetTransactionByRangeDateWithTxType(startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
-	totalSales, err := uc.transactionRepo.SumIncomeTransactions(startDate, endDate)
+	totalSales, err := uc.transactionRepo.SumTransactionByDateAndType(column_total ,startDate, endDate,tx_type)
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +232,7 @@ func (uc *reportUseCase) GenerateProfitLossStatement(startDate time.Time, endDat
 	if err != nil {
 		return nil, err
 	}
-	totalOut, err := uc.transactionRepo.SumPaymentTransactionsWithType(startDate, endDate, tx_type)
+	totalOut, err := uc.transactionRepo.SumTransactionByDateAndType(column_payment ,startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +304,9 @@ func (uc *reportUseCase) GenerateProfitLossStatement(startDate time.Time, endDat
 
 func (uc *reportUseCase) GenerateCashFlowStatement(startDate time.Time, endDate time.Time) (*model.CashFlowStatement, error) {
 	tx_type := "in"
-	totalCashOut, err := uc.transactionRepo.SumPaymentTransactionsWithType(startDate, endDate, tx_type)
+	column_payment := "payment_amount"
+	column_total := "total"
+	totalCashOut, err := uc.transactionRepo.SumTransactionByDateAndType(column_payment,startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +315,7 @@ func (uc *reportUseCase) GenerateCashFlowStatement(startDate time.Time, endDate 
 		return nil, err
 	}
 	tx_type = "out"
-	totalCashIn, err := uc.transactionRepo.SumPaymentTransactionsWithType(startDate, endDate, tx_type)
+	totalCashIn, err := uc.transactionRepo.SumTransactionByDateAndType(column_total,startDate, endDate, tx_type)
 	if err != nil {
 		return nil, err
 	}
@@ -439,11 +396,6 @@ func (uc *reportUseCase) GenerateConsolidatedReport(startDate time.Time, endDate
 		return nil, err
 	}
 
-	transactionReport, err := uc.GenerateReport(startDate, endDate)
-	if err != nil {
-		return nil, err
-	}
-
 	salesReport, err := uc.GenerateSalesReport(startDate, endDate)
 	if err != nil {
 		return nil, err
@@ -471,7 +423,6 @@ func (uc *reportUseCase) GenerateConsolidatedReport(startDate time.Time, endDate
 
 	consolidatedReport := &model.ConsolidatedReport{
 		ExpenditureReport:         expenditureReport,
-		TransactionReport:         transactionReport,
 		SalesReport:               salesReport,
 		ReceiptReport:             receiptReport,
 		DebtAccountsPayableReport: debtAccountsPayableReport,

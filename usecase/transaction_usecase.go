@@ -134,6 +134,7 @@ func (uc *transactionUseCase) GetAllTransactions() ([]*model.TransactionHeader, 
 	return uc.transactionRepo.GetAllTransactions()
 }
 
+//notUse
 func (uc *transactionUseCase) GetTransactionByID(id string) (*model.TransactionHeader, error) {
 	transaction, err := uc.transactionRepo.GetTransactionByID(id)
 	if err != nil {
