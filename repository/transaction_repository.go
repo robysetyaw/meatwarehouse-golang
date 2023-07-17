@@ -548,7 +548,8 @@ func (repo *transactionRepository) GetTransactionsByDateAndType(startDate time.T
 func (repo *transactionRepository) SumTransactionByDateAndTypeAndStatus(column string, startDate time.Time, endDate time.Time, tx_type string, status string) (float64, error) {
 	var sum float64
 
-	err := repo.db.QueryRow("SELECT SUM($1) FROM transaction_headers WHERE DATE(created_at) >= $2 AND DATE(created_at) <= $3 AND tx_type = $4 AND payment_status = $5", column, startDate, endDate, tx_type, status).Scan(&sum)
+	query := fmt.Sprintf("SELECT SUM(%s) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = $3 AND payment_status = $4", column)
+	err := repo.db.QueryRow(query, startDate, endDate, tx_type, status).Scan(&sum)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count Income transactions: %w", err)
 	}
@@ -559,7 +560,8 @@ func (repo *transactionRepository) SumTransactionByDateAndTypeAndStatus(column s
 func (repo *transactionRepository) SumTransactionByDateAndType(column string, startDate time.Time, endDate time.Time, tx_type string) (float64, error) {
 	var sum float64
 
-	err := repo.db.QueryRow("SELECT SUM($1) FROM transaction_headers WHERE DATE(created_at) >= $2 AND DATE(created_at) <= $3 AND tx_type = $4", column, startDate, endDate, tx_type).Scan(&sum)
+	query := fmt.Sprintf("SELECT SUM(%s) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2 AND tx_type = $3", column)
+	err := repo.db.QueryRow(query, startDate, endDate, tx_type).Scan(&sum)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count Income transactions: %w", err)
 	}
@@ -570,7 +572,9 @@ func (repo *transactionRepository) SumTransactionByDateAndType(column string, st
 func (repo *transactionRepository) SumTransactionByDate(column string, startDate time.Time, endDate time.Time) (float64, error) {
 	var total float64
 
-	err := repo.db.QueryRow("SELECT SUM($1) FROM transaction_headers WHERE DATE(created_at) >= $2 AND DATE(created_at) <= $3 ", column, startDate, endDate).Scan(&total)
+	query := fmt.Sprintf("SELECT SUM(%s) FROM transaction_headers WHERE DATE(created_at) >= $1 AND DATE(created_at) <= $2", column)
+	err := repo.db.QueryRow(query, startDate, endDate).Scan(&total)
+
 	if err != nil {
 		return 0, fmt.Errorf("failed to count Income transactions: %w", err)
 	}
