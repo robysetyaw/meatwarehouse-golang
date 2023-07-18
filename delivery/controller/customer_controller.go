@@ -27,6 +27,7 @@ func NewCustomerController(r *gin.Engine, customerUsecase usecase.CustomerUseCas
 	r.GET("/customer/:id", middleware.JWTAuthMiddleware(), controller.GetCustomerByID)
 	r.PUT("/customer/:id", middleware.JWTAuthMiddleware(), controller.UpdateCustomer)
 	r.DELETE("/customer/:id", middleware.JWTAuthMiddleware(), controller.DeleteCustomer)
+	r.GET("/customers/transaction/:username", middleware.JWTAuthMiddleware(), controller.GetAllCustomerTransactions)
 	return controller
 }
 
@@ -141,9 +142,9 @@ func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 }
 
 func (cc *CustomerController) GetCustomerByID(c *gin.Context) {
-	customerId := c.Param("id")
+	username := c.Param("username")
 
-	expenditure, err := cc.customerUsecase.GetCustomerById(customerId)
+	expenditure, err := cc.customerUsecase.GetCustomerById(username)
 	if err != nil {
 		appError := apperror.AppError{}
 		if errors.As(err, &appError) {
@@ -180,4 +181,26 @@ func (cc *CustomerController) DeleteCustomer(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "customer deleted successfully"})
+}
+
+func (cc *CustomerController) GetAllCustomerTransactions(c *gin.Context) {
+	userName := c.Param("username")
+	customerTransactions, err := cc.customerUsecase.GetAllCustomerTransactions(userName)
+	if err != nil {
+		appError := apperror.AppError{}
+		if errors.As(err, &appError) {
+			fmt.Printf(" cc.customerUsecase.GetAllCustomers() : %v ", err.Error())
+			c.JSON(http.StatusBadGateway, gin.H{
+				"errorMessage": appError.Error(),
+			})
+		} else {
+			fmt.Printf("ServiceHandler.InsertService() 2 : %v ", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"errorMessage": "failed to get customers",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, customerTransactions)
 }

@@ -20,6 +20,7 @@ type TransactionHeader struct {
 	UpdatedAt          time.Time            `json:"updated_at"`
 	CreatedBy          string               `json:"created_by"`
 	UpdatedBy          string               `json:"updated_by"`
+	FullName           string               `json:"-"`
 	TransactionDetails []*TransactionDetail `json:"transaction_details"`
 }
 

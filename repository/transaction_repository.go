@@ -25,6 +25,7 @@ type TransactionRepository interface {
 	SumTransactionByDateAndType(column string, startDate time.Time, endDate time.Time, tx_type string) (float64, error)
 	SumTransactionByDate(column string, startDate time.Time, endDate time.Time) (float64, error)
 	UpdateCustomerDebt(customer_id string) error
+	GetAllTransactionsByCustomerUsername(customer_id string) ([]*model.TransactionHeader, error)
 }
 
 type transactionRepository struct {
@@ -601,4 +602,53 @@ func (repo *transactionRepository) UpdateCustomerDebt(customer_id string) error 
 		return fmt.Errorf("failed to count Income transactions: %w", err)
 	}
 	return nil
+}
+
+func (repo *transactionRepository) GetAllTransactionsByCustomerUsername(username string) ([]*model.TransactionHeader, error) {
+	// Perform database query to retrieve all active transactions
+	rows, err := repo.db.Query(`
+		SELECT th.id, th.date, th.customer_id, th.name, th.address, th.company, th.phone_number, th.tx_type, th.total, th.is_active, th.created_at, th.updated_at, th.created_by, th.updated_by, th.inv_number, c.fullname
+		FROM transaction_headers th
+		JOIN customers c ON th.customer_id = c.id
+		WHERE th.is_active = true AND c.fullname = $1
+	`, username)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all transactions: %w", err)
+	}
+	defer rows.Close()
+
+	// Iterate over the rows and scan the results into TransactionHeader objects
+	transactions := make([]*model.TransactionHeader, 0)
+	for rows.Next() {
+		var transaction model.TransactionHeader
+		err := rows.Scan(
+			&transaction.ID,
+			&transaction.Date,
+			&transaction.CustomerID,
+			&transaction.Name,
+			&transaction.Address,
+			&transaction.Company,
+			&transaction.PhoneNumber,
+			&transaction.TxType,
+			&transaction.Total,
+			&transaction.IsActive,
+			&transaction.CreatedAt,
+			&transaction.UpdatedAt,
+			&transaction.CreatedBy,
+			&transaction.UpdatedBy,
+			&transaction.InvoiceNumber,
+			&transaction.FullName,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction header row: %w", err)
+		}
+
+		transactions = append(transactions, &transaction)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred while iterating over transaction header rows: %w", err)
+	}
+
+	return transactions, nil
 }

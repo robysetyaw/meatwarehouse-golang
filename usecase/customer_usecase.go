@@ -16,17 +16,20 @@ type CustomerUseCase interface {
 	GetCustomerById(string) (*model.CustomerModel, error)
 	GetAllCustomers() ([]*model.CustomerModel, error)
 	DeleteCustomer(string) error
+	GetAllCustomerTransactions(customer_id string) ([]*model.TransactionHeader, error)
 }
 
 type customerUseCase struct {
 	customerRepo repository.CustomerRepository
 	companyRepo  repository.CompanyRepository
+	txRepo repository.TransactionRepository
 }
 
-func NewCustomerUseCase(customerRepo repository.CustomerRepository, companyRepo repository.CompanyRepository) CustomerUseCase {
+func NewCustomerUseCase(customerRepo repository.CustomerRepository, companyRepo repository.CompanyRepository, txRepo repository.TransactionRepository) CustomerUseCase {
 	return &customerUseCase{
 		customerRepo: customerRepo,
 		companyRepo:  companyRepo,
+		txRepo: txRepo,
 	}
 }
 
@@ -152,4 +155,19 @@ func (cu *customerUseCase) DeleteCustomer(id string) error {
 		}
 	}
 	return cu.customerRepo.DeleteCustomer(id)
+}
+
+func (cu *customerUseCase) GetAllCustomerTransactions(username string) ([]*model.TransactionHeader, error) {
+	customerTransactions, err := cu.txRepo.GetAllTransactionsByCustomerUsername(username)
+	if err != nil {
+		return nil, fmt.Errorf("error GetAllCustomerTransactions %w : ", err)
+
+	}
+	if customerTransactions == nil {
+		return nil, apperror.AppError{
+			ErrorCode:    400,
+			ErrorMassage: "data customer is empty",
+		}
+	}
+	return customerTransactions, nil
 }
