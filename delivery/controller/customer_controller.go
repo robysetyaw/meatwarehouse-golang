@@ -52,6 +52,7 @@ func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 	userName := claims["username"].(string)
 	customer.CreatedBy = userName
 	customer.Id = common.UuidGenerate()
+	customer.Debt = 0
 
 	if err := cc.customerUsecase.CreateCustomer(&customer); err != nil {
 		appError := apperror.AppError{}

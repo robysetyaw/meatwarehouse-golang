@@ -24,6 +24,7 @@ type TransactionRepository interface {
 	SumTransactionByDateAndTypeAndStatus(column string, startDate time.Time, endDate time.Time, tx_type string, status string) (float64, error)
 	SumTransactionByDateAndType(column string, startDate time.Time, endDate time.Time, tx_type string) (float64, error)
 	SumTransactionByDate(column string, startDate time.Time, endDate time.Time) (float64, error)
+	UpdateCustomerDebt(customer_id string) error
 }
 
 type transactionRepository struct {
@@ -580,4 +581,24 @@ func (repo *transactionRepository) SumTransactionByDate(column string, startDate
 	}
 
 	return total, nil
+}
+
+func (repo *transactionRepository) UpdateCustomerDebt(customer_id string) error {
+	var total float64
+
+	query := `SELECT SUM(total)-SUM(payment_amount) FROM transaction_headers WHERE customer_id = $1`
+	err := repo.db.QueryRow(query, customer_id).Scan(&total)
+
+	if err != nil {
+		return fmt.Errorf("failed to count Income transactions: %w", err)
+	}
+
+	query = `UPDATE customers
+	SET debt = $1
+	WHERE id = $2`
+	_, err = repo.db.Exec(query, total, customer_id)
+	if err != nil {
+		return fmt.Errorf("failed to count Income transactions: %w", err)
+	}
+	return nil
 }

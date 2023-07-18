@@ -3,7 +3,7 @@ package model
 import "time"
 
 type CustomerModel struct {
-	Id          string    `json:"id"`
+	Id          string    `json:"-"`
 	FullName    string    `json:"fullname" binding:"required"`
 	Address     string    `json:"address"`
 	CompanyId   string    `json:"company_id"`
@@ -12,4 +12,5 @@ type CustomerModel struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 	CreatedBy   string    `json:"created_by"`
 	UpdatedBy   string    `json:"updated_by"`
+	Debt        float64   `json:"debt"`
 }

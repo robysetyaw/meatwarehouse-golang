@@ -114,7 +114,7 @@ func (repo *customerRepository) GetCustomerByName(customerName string) (*model.C
 func (repo *customerRepository) GetAllCustomer() ([]*model.CustomerModel, error) {
 	// Perform database query to retrieve all customers
 	rows, err := repo.db.Query(`
-	SELECT id, fullname, address, company_id, phone_number, created_at, updated_at, created_by, updated_by
+	SELECT id, fullname, address, company_id, phone_number, created_at, updated_at, created_by, updated_by, debt
 	FROM customers
 	`)
 	if err != nil {
@@ -136,6 +136,7 @@ func (repo *customerRepository) GetAllCustomer() ([]*model.CustomerModel, error)
 			&customer.UpdatedAt,
 			&customer.CreatedBy,
 			&customer.UpdatedBy,
+			&customer.Debt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan customer row: %w", err)
