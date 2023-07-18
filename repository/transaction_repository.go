@@ -26,6 +26,8 @@ type TransactionRepository interface {
 	SumTransactionByDate(column string, startDate time.Time, endDate time.Time) (float64, error)
 	UpdateCustomerDebt(customer_id string) error
 	GetAllTransactionsByCustomerUsername(customer_id string) ([]*model.TransactionHeader, error)
+	getCustomerDebt(customer_id string) (float64,error)
+	getTransactionDebt(id string) (float64,error)
 }
 
 type transactionRepository struct {
@@ -585,16 +587,12 @@ func (repo *transactionRepository) SumTransactionByDate(column string, startDate
 }
 
 func (repo *transactionRepository) UpdateCustomerDebt(customer_id string) error {
-	var total float64
-
-	query := `SELECT SUM(total)-SUM(payment_amount) FROM transaction_headers WHERE customer_id = $1`
-	err := repo.db.QueryRow(query, customer_id).Scan(&total)
-
+	
+	total,err := repo.getCustomerDebt(customer_id) 
 	if err != nil {
-		return fmt.Errorf("failed to count Income transactions: %w", err)
+		return err
 	}
-
-	query = `UPDATE customers
+	query := `UPDATE customers
 	SET debt = $1
 	WHERE id = $2`
 	_, err = repo.db.Exec(query, total, customer_id)
@@ -607,7 +605,7 @@ func (repo *transactionRepository) UpdateCustomerDebt(customer_id string) error 
 func (repo *transactionRepository) GetAllTransactionsByCustomerUsername(username string) ([]*model.TransactionHeader, error) {
 	// Perform database query to retrieve all active transactions
 	rows, err := repo.db.Query(`
-		SELECT th.id, th.date, th.customer_id, th.name, th.address, th.company, th.phone_number, th.tx_type, th.total, th.is_active, th.created_at, th.updated_at, th.created_by, th.updated_by, th.inv_number, c.fullname
+		SELECT th.id, th.date, th.customer_id, th.name, th.address, th.company, th.phone_number, th.tx_type, th.total, th.is_active, th.created_at, th.updated_at, th.created_by, th.updated_by, th.inv_number, th.payment_amount, th.payment_status,  c.fullname
 		FROM transaction_headers th
 		JOIN customers c ON th.customer_id = c.id
 		WHERE th.is_active = true AND c.fullname = $1
@@ -637,12 +635,16 @@ func (repo *transactionRepository) GetAllTransactionsByCustomerUsername(username
 			&transaction.CreatedBy,
 			&transaction.UpdatedBy,
 			&transaction.InvoiceNumber,
+			&transaction.PaymentAmount,
+			&transaction.PaymentStatus,
 			&transaction.FullName,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan transaction header row: %w", err)
 		}
 
+		debt,_ := repo.getTransactionDebt(transaction.ID)
+		transaction.Debt = debt
 		transactions = append(transactions, &transaction)
 	}
 
@@ -651,4 +653,28 @@ func (repo *transactionRepository) GetAllTransactionsByCustomerUsername(username
 	}
 
 	return transactions, nil
+}
+
+func (repo *transactionRepository) getCustomerDebt(customer_id string) (float64,error) {
+	var total float64
+
+	query := `SELECT SUM(total)-SUM(payment_amount) FROM transaction_headers WHERE customer_id = $1`
+	err := repo.db.QueryRow(query, customer_id).Scan(&total)
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to count Income transactions: %w", err)
+	}
+	return total,err
+}
+
+func (repo *transactionRepository) getTransactionDebt(id string) (float64,error) {
+	var total float64
+
+	query := `SELECT total-payment_amount FROM transaction_headers WHERE id = $1`
+	err := repo.db.QueryRow(query, id).Scan(&total)
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to count Income transactions: %w", err)
+	}
+	return total,err
 }

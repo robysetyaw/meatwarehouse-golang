@@ -21,6 +21,7 @@ type TransactionHeader struct {
 	CreatedBy          string               `json:"created_by"`
 	UpdatedBy          string               `json:"updated_by"`
 	FullName           string               `json:"-"`
+	Debt               float64              `json: "debt"`
 	TransactionDetails []*TransactionDetail `json:"transaction_details"`
 }
 
