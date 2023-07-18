@@ -1,0 +1,8 @@
+# Ignore file
+.env
+__debug_bin.exe
+# Ignore folder
+.vscode/
+
+# Ignore semua file dengan ekstensi .log
+*.log
