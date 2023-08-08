@@ -51,6 +51,7 @@ func (uc *stockMovementUseCase) GenerateStockMovementReport(startDate time.Time,
 			TotalStockIn:  totalStockIn,
 			TotalStockOut: totalStockOut,
 			StockMovement: stockMovement,
+			TotalStock: meat.Stock,
 		}
 
 		stockMovementReports = append(stockMovementReports, stockMovementReport)

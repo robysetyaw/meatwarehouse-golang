@@ -33,7 +33,7 @@ func (uc *loginUseCase) Login(username, password string) (string, error) {
 	}
 
 	// Verifikasi password pengguna dengan menggunakan bcrypt
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))	
 	if err != nil {
 		return "", fmt.Errorf("invalid username or password")
 	}

@@ -134,4 +134,5 @@ type StockMovementReport struct {
 	TotalStockIn  float64 `json:"total_stock_in"`
 	TotalStockOut float64 `json:"total_stock_out"`
 	StockMovement float64 `json:"stock_movement"`
+	TotalStock    float64 `json:"total_stock"`
 }
