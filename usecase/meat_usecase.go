@@ -25,8 +25,15 @@ func NewMeatUseCase(meatRepo repository.MeatRepository) MeatUseCase {
 
 func (ms *meatUseCase) CreateMeat(meat *model.Meat) error {
 
+	isExist,err := ms.meatRepository.GetMeatByName(meat.Name)
+	if err != nil {
+		return fmt.Errorf("failed to check meatname existence: %w", err)
+	}
+	if isExist != nil {
+		return fmt.Errorf("meatname already exists")
+	}
 
-	err := ms.meatRepository.CreateMeat(meat)
+	err = ms.meatRepository.CreateMeat(meat)
 	if err != nil {
 		return err
 	}

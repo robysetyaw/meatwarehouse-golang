@@ -35,6 +35,10 @@ func NewCustomerUseCase(customerRepo repository.CustomerRepository, companyRepo 
 
 func (cu *customerUseCase) CreateCustomer(customerReq *model.CustomerReqModel) error {
 	now := time.Now()
+	nameIsExist,err := cu.customerRepo.GetCustomerByName(customerReq.FullName)
+	if nameIsExist != nil {
+		return fmt.Errorf("already here : %w", err)
+	}
 	customerReq.CreatedAt = now
 	customerReq.UpdatedAt = now
 	var company model.Company

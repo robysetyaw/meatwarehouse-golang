@@ -28,10 +28,11 @@ func NewCustomerRepository(db *sql.DB) CustomerRepository {
 
 func (repo *customerRepository) CreateCustomer(customer *model.CustomerModel) error {
 	// Perform database insert operation
+	zero := 0
 	_, err := repo.db.Exec(`
-		INSERT INTO customers (id, fullname, address, company_id, phone_number, created_at, updated_at, created_by, updated_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-	`, customer.Id, customer.FullName, customer.Address, customer.CompanyId, customer.PhoneNumber, customer.CreatedAt, customer.UpdatedAt, customer.CreatedBy, customer.CreatedBy)
+		INSERT INTO customers (id, fullname, address, company_id, phone_number, created_at, updated_at, created_by, updated_by, debt)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	`, customer.Id, customer.FullName, customer.Address, customer.CompanyId, customer.PhoneNumber, customer.CreatedAt, customer.UpdatedAt, customer.CreatedBy, customer.CreatedBy, zero)
 	if err != nil {
 		return fmt.Errorf("failed to create customer: %w", err)
 	}

@@ -22,11 +22,11 @@ func NewCustomerController(r *gin.Engine, customerUsecase usecase.CustomerUseCas
 	controller := &CustomerController{
 		customerUsecase: customerUsecase,
 	}
-	r.POST("/customer", middleware.JWTAuthMiddleware(), controller.CreateCustomer)
+	r.POST("/customers", middleware.JWTAuthMiddleware(), controller.CreateCustomer)
 	r.GET("/customers", middleware.JWTAuthMiddleware(), controller.GetAllCustomer)
-	r.GET("/customer/:id", middleware.JWTAuthMiddleware(), controller.GetCustomerByID)
-	r.PUT("/customer/:id", middleware.JWTAuthMiddleware(), controller.UpdateCustomer)
-	r.DELETE("/customer/:id", middleware.JWTAuthMiddleware(), controller.DeleteCustomer)
+	r.GET("/customers/:id", middleware.JWTAuthMiddleware(), controller.GetCustomerByID)
+	r.PUT("/customers/:id", middleware.JWTAuthMiddleware(), controller.UpdateCustomer)
+	r.DELETE("/customers/:id", middleware.JWTAuthMiddleware(), controller.DeleteCustomer)
 	r.GET("/customers/transaction/:username", middleware.JWTAuthMiddleware(), controller.GetAllCustomerTransactions)
 	return controller
 }
