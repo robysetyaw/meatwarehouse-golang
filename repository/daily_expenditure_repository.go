@@ -47,6 +47,7 @@ func (repo *dailyExpenditureRepository) CreateDailyExpenditure(expenditure *mode
 	now := time.Now()
 	expenditure.CreatedAt = now
 	expenditure.UpdatedAt = now
+	expenditure.IsActive = true
 
 	// Perform database insert operation
 	_, err := repo.db.Exec(`
