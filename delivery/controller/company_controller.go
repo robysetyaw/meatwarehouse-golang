@@ -19,11 +19,11 @@ func NewCompanyController(r *gin.Engine, companyUseCase usecase.CompanyUseCase) 
 	controller := &CompanyController{
 		companyUseCase: companyUseCase,
 	}
-	r.POST("/company", middleware.JWTAuthMiddleware(), controller.CreateCompany)
-	r.PUT("/company/:id", middleware.JWTAuthMiddleware(), controller.UpdateCompany)
-	r.GET("/company/:id", middleware.JWTAuthMiddleware(), controller.GetCompanyById)
+	r.POST("/companies", middleware.JWTAuthMiddleware(), controller.CreateCompany)
+	r.PUT("/companies/:id", middleware.JWTAuthMiddleware(), controller.UpdateCompany)
+	r.GET("/companies/:id", middleware.JWTAuthMiddleware(), controller.GetCompanyById)
 	r.GET("/companies", middleware.JWTAuthMiddleware(), controller.GetAllCompany)
-	r.DELETE("/company/:id", middleware.JWTAuthMiddleware(), controller.DeleteCompany)
+	r.DELETE("/companies/:id", middleware.JWTAuthMiddleware(), controller.DeleteCompany)
 
 	return controller
 }

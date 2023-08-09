@@ -4,6 +4,7 @@ import (
 	"enigmacamp.com/final-project/team-4/track-prosto/config"
 	"enigmacamp.com/final-project/team-4/track-prosto/delivery/controller"
 	"enigmacamp.com/final-project/team-4/track-prosto/manager"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -36,7 +37,16 @@ func NewServer() *Server {
 	if err != nil {
 		panic(err)
 	}
+
+	
 	r := gin.Default()
+	configCors := cors.DefaultConfig()
+	configCors.AllowAllOrigins = true
+	configCors.AllowMethods = []string{"GET", "POST", "PUT", "DELETE"}
+	configCors.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+
+	r.Use(cors.New(configCors))
+
 	infra := manager.NewInfraManager(c)
 	repo := manager.NewRepoManager(infra)
 	usecase := manager.NewUsecaseManager(repo)
