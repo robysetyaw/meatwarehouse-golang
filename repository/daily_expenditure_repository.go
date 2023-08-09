@@ -39,6 +39,7 @@ func (repo *dailyExpenditureRepository) GetTotalExpenditureByDateRange(startDate
 	if err != nil {
 		return 0, apperror.AppError{ErrorCode: 404,ErrorMassage: "Data Not Found"}
 	}
+	// TODO : checking query error can't get total
 	// fmt.Print(startDate)
 	return total, nil
 }
